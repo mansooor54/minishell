@@ -6,18 +6,31 @@
    - else:
         minishell (<dir>)$
 */
-static void	print_prompt(t_shell *sh)
+void	print_prompt(t_shell *sh)
 {
-	if (sh->show_dir == 0 || sh->cwd_name[0] == '\0')
+	char	cwd[PATH_MAX];
+	char	*name;
+
+	(void)sh;
+	if (getcwd(cwd, PATH_MAX) == NULL)
 	{
 		ft_putstr("minishell$ ");
 		return ;
 	}
-	ft_putstr("minishell (");
-	ft_putstr(sh->cwd_name);
+	name = get_last_dir_name(cwd);
+
+	/* if we are in the main project dir "minishell" -> plain minishell$ */
+	if (ft_strcmp(name, "minishell") == 0)
+	{
+		ft_putstr("minishell$ ");
+		return ;
+	}
+
+	/* else show minishell(<dirname>)$ */
+	ft_putstr("minishell(");
+	ft_putstr(name);
 	ft_putstr(")$ ");
 }
-
 
 /*
 read loop:
@@ -27,7 +40,7 @@ read loop:
 - handle exit
 - run command (which may update sh for cd)
 */
-int	main(void)
+int	main(int ac, char **av, char **envp)
 {
 	char		buffer[BUFFER_SIZE];
 	char		*argv[MAX_ARGS];
@@ -35,14 +48,12 @@ int	main(void)
 	int			argc;
 	t_shell		sh;
 
-	/* init shell state */
-	sh.show_dir = 0;
-	sh.cwd_name[0] = '\0';
-
+	(void)ac;
+	(void)av;
+	sh.envp = envp;
 	while (1)
 	{
 		print_prompt(&sh);
-
 		res = read_line(buffer, BUFFER_SIZE);
 		if (res < 0)
 		{
@@ -54,11 +65,9 @@ int	main(void)
 			ft_putstr("\n");
 			break ;
 		}
-
 		argc = split_args(buffer, argv, MAX_ARGS);
 		if (argc == 0)
 			continue ;
-
 		if (argc == 1
 			&& argv[0][0] == 'e'
 			&& argv[0][1] == 'x'
@@ -66,7 +75,6 @@ int	main(void)
 			&& argv[0][3] == 't'
 			&& argv[0][4] == '\0')
 			break ;
-
 		run_command(argv, &sh);
 	}
 	return (0);

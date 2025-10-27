@@ -45,19 +45,7 @@ void	*ft_calloc(size_t count, size_t size)
 	return ((void *)mem);
 }
 
-void	free_args(char **args, int count)
-{
-	int	i;
-
-	i = 0;
-	while (i < count)
-	{
-		args[i] = NULL;
-		i++;
-	}
-	(void)args;
-}
-
+/* return pointer to last component after '/' */
 char	*get_last_dir_name(char *path)
 {
 	int	i;
@@ -69,12 +57,79 @@ char	*get_last_dir_name(char *path)
 	last = 0;
 	while (path[i] != '\0')
 	{
-		if (path[i] == '/')
-		{
-			if (path[i + 1] != '\0')
-				last = i + 1;
-		}
+		if (path[i] == '/' && path[i + 1] != '\0')
+			last = i + 1;
 		i++;
 	}
 	return (&path[last]);
+}
+
+/* basic strcmp */
+int	ft_strcmp(char *a, char *b)
+{
+	int	i;
+
+	i = 0;
+	while (a[i] && b[i] && a[i] == b[i])
+		i++;
+	return ((unsigned char)a[i] - (unsigned char)b[i]);
+}
+
+/* duplicate string with malloc */
+char	*ft_strdup(char *s)
+{
+	size_t	len;
+	size_t	i;
+	char	*copy;
+
+	len = ft_strlen(s);
+	copy = (char *)malloc(len + 1);
+	if (!copy)
+		return (NULL);
+	i = 0;
+	while (i < len)
+	{
+		copy[i] = s[i];
+		i++;
+	}
+	copy[i] = '\0';
+	return (copy);
+}
+
+/*
+ft_strjoin_path:
+dir="/bin"
+cmd="ls"
+-> "/bin/ls"
+Returns malloc'd string or NULL.
+*/
+char	*ft_strjoin_path(char *dir, char *cmd)
+{
+	size_t	len_dir;
+	size_t	len_cmd;
+	size_t	i;
+	size_t	j;
+	char	*out;
+
+	len_dir = ft_strlen(dir);
+	len_cmd = ft_strlen(cmd);
+	out = (char *)malloc(len_dir + 1 + len_cmd + 1);
+	if (!out)
+		return (NULL);
+	i = 0;
+	while (i < len_dir)
+	{
+		out[i] = dir[i];
+		i++;
+	}
+	out[i] = '/';
+	i++;
+	j = 0;
+	while (j < len_cmd)
+	{
+		out[i + j] = cmd[j];
+		j++;
+	}
+	out[i + j] = '\0';
+	return (out);
 }
