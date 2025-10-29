@@ -13,18 +13,17 @@
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
-# include <stdio.h>
-# include <stdlib.h>
-# include <unistd.h>
-# include <sys/types.h>
-# include <sys/wait.h>
-# include <string.h>
-# include <errno.h>
-# include <limits.h>
-# include <signal.h>
-
-# include <readline/readline.h>
-# include <readline/history.h>
+# include <stdio.h>              /* printf, perror */
+# include <stdlib.h>             /* malloc, free, exit */
+# include <unistd.h>     /* write, access, execve, fork, getcwd, chdir */
+# include <sys/types.h>          /* pid_t */
+# include <sys/wait.h>           /* waitpid */
+# include <readline/readline.h>  /* readline, rl_* */
+# include <readline/history.h>   /* add_history */
+# include <string.h>             /* strcmp, strlen (placeholder until libft) */
+# include <errno.h>              /* errno */
+# include <limits.h>             /* PATH_MAX */
+# include <signal.h>             /* sigaction, sig_atomic_t */
 
 /*
 Temporary forward declarations for readline types.
