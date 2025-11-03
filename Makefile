@@ -6,17 +6,36 @@
 #    By: student <student@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/02 00:00:00 by student           #+#    #+#              #
-#    Updated: 2025/11/02 00:00:00 by student          ###   ########.fr        #
+#    Updated: 2025/11/03 00:00:00 by student          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = minishell
 
 # Compiler and flags
-CC = cc
+CC = gcc
 CFLAGS = -Wall -Wextra -Werror -g
-INCLUDES = -I./include -I./libft -I$(HOME)/.brew/opt/readline/include
-LDFLAGS = -L$(HOME)/.brew/opt/readline/lib -lreadline -L./libft -lft
+INCLUDES = -I. -I./libft 
+LDFLAGS = -lreadline -L./libft -lft
+
+# Try to detect Homebrew readline and ncurses on macOS; otherwise fall back
+READLINE_PREFIX := $(shell brew --prefix readline 2>/dev/null)
+NCURSES_PREFIX  := $(shell brew --prefix ncurses  2>/dev/null)
+
+ifeq ($(READLINE_PREFIX),)
+    # Linux or no Homebrew detected
+    CFLAGS  +=
+    LDFLAGS += -lreadline -lhistory -lncurses
+else
+    CFLAGS  += -I$(READLINE_PREFIX)/include
+    LDFLAGS += -L$(READLINE_PREFIX)/lib -lreadline -lhistory
+    ifneq ($(NCURSES_PREFIX),)
+        LDFLAGS += -L$(NCURSES_PREFIX)/lib -lncurses
+    else
+        # Some macOS setups still need ncurses from system
+        LDFLAGS += -lncurses
+    endif
+endif
 
 # Libft
 LIBFT_DIR = libft
@@ -24,7 +43,7 @@ LIBFT = $(LIBFT_DIR)/libft.a
 
 # Source files
 SRC_DIR = src
-SRCS = $(SRC_DIR)/main.c \
+SRCS = main.c \
        $(SRC_DIR)/lexer/lexer.c \
        $(SRC_DIR)/lexer/lexer_utils.c \
        $(SRC_DIR)/parser/parser.c \
@@ -48,7 +67,7 @@ SRCS = $(SRC_DIR)/main.c \
 
 # Object files
 OBJ_DIR = obj
-OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+OBJS = $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
 # Colors for output
 GREEN = \033[0;32m
@@ -68,7 +87,7 @@ $(NAME): $(OBJS) $(LIBFT)
 	@$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(NAME)
 	@echo "$(GREEN)$(NAME) created successfully!$(RESET)"
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	@echo "$(GREEN)Compiling $<...$(RESET)"
 	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@

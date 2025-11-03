@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 /*
 ** Create a new token with given type and value

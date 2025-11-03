@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 /*
 ** Check if a command is a built-in
