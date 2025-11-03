@@ -3,37 +3,32 @@
 /*                                                        :::      ::::::::   */
 /*   ft_substr.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: student <student@42.fr>                    +#+  +:+       +#+        */
+/*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/02 00:00:00 by student           #+#    #+#             */
-/*   Updated: 2025/11/02 00:00:00 by student          ###   ########.fr       */
+/*   Created: 2025/01/16 14:22:02 by malmarzo          #+#    #+#             */
+/*   Updated: 2025/01/16 14:22:02 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 
-char	*ft_substr(char const *s, unsigned int start, size_t len)
+char	*ft_substr(const char *s, unsigned int start, size_t len)
 {
-	char	*substr;
-	size_t	i;
-	size_t	s_len;
+	char	*new;
+	size_t	slen;
+	size_t	actual_len;
 
 	if (!s)
 		return (NULL);
-	s_len = ft_strlen(s);
-	if (start >= s_len)
+	slen = ft_strlen(s);
+	if (slen == 0 || start >= slen)
 		return (ft_strdup(""));
-	if (len > s_len - start)
-		len = s_len - start;
-	substr = malloc(len + 1);
-	if (!substr)
+	actual_len = slen - start;
+	if (actual_len > len)
+		actual_len = len;
+	new = (char *)malloc(sizeof(char) * (actual_len + 1));
+	if (!new)
 		return (NULL);
-	i = 0;
-	while (i < len)
-	{
-		substr[i] = s[start + i];
-		i++;
-	}
-	substr[i] = '\0';
-	return (substr);
+	ft_strlcpy(new, s + start, actual_len + 1);
+	return (new);
 }

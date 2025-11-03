@@ -3,39 +3,40 @@
 /*                                                        :::      ::::::::   */
 /*   ft_strjoin.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: student <student@42.fr>                    +#+  +:+       +#+        */
+/*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/02 00:00:00 by student           #+#    #+#             */
-/*   Updated: 2025/11/02 00:00:00 by student          ###   ########.fr       */
+/*   Created: 2025/01/16 09:41:27 by malmarzo          #+#    #+#             */
+/*   Updated: 2025/01/16 09:41:27 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 
-char	*ft_strjoin(char const *s1, char const *s2)
+char	*ft_strjoin(const char *s1, const char *s2)
 {
-	char	*joined;
-	size_t	len1;
-	size_t	len2;
-	size_t	i;
-	size_t	j;
+	char	*dst;
+	size_t	size;
+	size_t	len_s1;
+	size_t	len_s2;
 
-	if (!s1 || !s2)
+	if (s1 == NULL || s2 == NULL)
 		return (NULL);
-	len1 = ft_strlen(s1);
-	len2 = ft_strlen(s2);
-	joined = malloc(len1 + len2 + 1);
-	if (!joined)
+	size = ft_strlen(s1) + ft_strlen(s2) + 1;
+	dst = ft_calloc(sizeof(char), size);
+	if (dst == NULL)
 		return (NULL);
-	i = 0;
-	while (i < len1)
+	len_s1 = 0;
+	while (*(s1 + len_s1))
 	{
-		joined[i] = s1[i];
-		i++;
+		*(dst + len_s1) = *(s1 + len_s1);
+		len_s1++;
 	}
-	j = 0;
-	while (j < len2)
-		joined[i++] = s2[j++];
-	joined[i] = '\0';
-	return (joined);
+	len_s2 = 0;
+	while (*(s2 + len_s2))
+	{
+		*(dst + len_s1 + len_s2) = *(s2 + len_s2);
+		len_s2++;
+	}
+	*(dst + len_s1 + len_s2) = '\0';
+	return (dst);
 }
