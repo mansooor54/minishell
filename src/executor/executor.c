@@ -13,8 +13,28 @@
 #include "../../minishell.h"
 
 /*
-** Find executable in PATH or return absolute/relative path
-** Searches through PATH directories for the command
+** find_executable - Locate executable file in PATH or validate path
+**
+** This function searches for an executable command in the system PATH or
+** validates an absolute/relative path. It implements the following logic:
+**
+** 1. If the command contains a '/' character, it's treated as an absolute
+**    or relative path and returned as-is (after duplication)
+** 2. Otherwise, it searches through all directories in the PATH environment
+**    variable to find an executable file with the given name
+** 3. Uses access() with X_OK to verify execute permissions
+**
+** The function allocates memory for the full path which must be freed by
+** the caller.
+**
+** @param cmd: The command name to search for (e.g., "ls" or "/bin/ls")
+** @param env: Linked list of environment variables containing PATH
+**
+** Return: Allocated string with full path to executable, or NULL if not found
+**         - NULL if cmd is NULL or empty
+**         - Duplicated cmd if it contains '/'
+**         - Full path from PATH if found and executable
+**         - NULL if PATH doesn't exist or command not found
 */
 char	*find_executable(char *cmd, t_env *env)
 {
@@ -49,8 +69,28 @@ char	*find_executable(char *cmd, t_env *env)
 }
 
 /*
-** Execute a single external command
-** Forks a child process and uses execve to run the command
+** execute_external - Execute an external (non-builtin) command
+**
+** This function handles the execution of external commands by:
+** 1. Finding the executable path using find_executable()
+** 2. Forking a child process
+** 3. Setting up redirections in the child process
+** 4. Converting environment list to array format for execve()
+** 5. Executing the command with execve()
+** 6. Waiting for the child process and capturing exit status
+**
+** Error handling:
+** - If command is not found, prints error message and sets exit status to 127
+** - If redirections fail, child exits with status 1
+** - If execve fails, child exits with status 1
+**
+** The parent process waits for the child and updates the shell's exit_status
+** based on the child's exit code.
+**
+** @param cmd: Command structure containing args and redirections
+** @param shell: Shell state structure containing environment and exit status
+**
+** Return: void (updates shell->exit_status)
 */
 static void	execute_external(t_cmd *cmd, t_shell *shell)
 {
@@ -84,8 +124,28 @@ static void	execute_external(t_cmd *cmd, t_shell *shell)
 }
 
 /*
-** Execute built-in command with redirections
-** Forks to handle redirections without affecting parent shell
+** execute_builtin_with_redir - Execute builtin command with redirections
+**
+** This function handles the special case of executing a builtin command
+** that has redirections. Since redirections modify file descriptors and
+** we don't want to affect the parent shell's file descriptors, we:
+**
+** 1. Fork a child process
+** 2. Set up redirections in the child (which modifies stdin/stdout)
+** 3. Execute the builtin in the child
+** 4. Exit the child with the builtin's return value
+** 5. Wait for the child and capture the exit status in the parent
+**
+** This approach ensures that redirections only affect the builtin execution
+** and not the parent shell's state.
+**
+** Example: "echo hello > file.txt" should redirect only for this command,
+** not affect subsequent commands in the shell.
+**
+** @param cmd: Command structure with builtin name, args, and redirections
+** @param shell: Shell state structure
+**
+** Return: void (updates shell->exit_status)
 */
 static void	execute_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 {
@@ -105,9 +165,30 @@ static void	execute_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 }
 
 /*
-** Execute a single command (builtin or external)
-** Checks if command is builtin first, otherwise executes externally
-** Handles redirections for both built-ins and external commands
+** execute_command - Execute a single command (builtin or external)
+**
+** This is the main command execution dispatcher that determines whether
+** a command is a builtin or external command and routes it accordingly.
+**
+** Execution flow:
+** 1. Validate that command exists and has arguments
+** 2. Check if command is a builtin using is_builtin()
+** 3. For builtins:
+**    - If redirections exist, fork and execute in child (to preserve parent FDs)
+**    - If no redirections, execute directly in parent (e.g., cd, export)
+** 4. For external commands:
+**    - Always fork and execute using execve()
+**
+** The distinction between builtin execution with/without redirections is
+** important because some builtins (like cd, export, unset) need to modify
+** the parent shell's state, which wouldn't work if executed in a child process.
+**
+** @param cmd: Command structure containing:
+**             - args: NULL-terminated array of arguments (args[0] is command name)
+**             - redirs: Linked list of redirections (can be NULL)
+** @param shell: Shell state structure containing environment and exit status
+**
+** Return: void (updates shell->exit_status)
 */
 void	execute_command(t_cmd *cmd, t_shell *shell)
 {
