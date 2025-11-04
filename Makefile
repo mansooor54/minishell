@@ -31,6 +31,8 @@ SRCS = main.c \
        $(SRC_DIR)/lexer/lexer_utils.c \
        $(SRC_DIR)/parser/parser.c \
        $(SRC_DIR)/parser/parser_pipeline.c \
+       $(SRC_DIR)/expander/expander_pipeline.c \
+       $(SRC_DIR)/expander/expander_utils.c \
        $(SRC_DIR)/expander/expander.c \
        $(SRC_DIR)/executor/executor.c \
        $(SRC_DIR)/executor/executor_pipeline.c \

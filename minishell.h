@@ -160,20 +160,48 @@ t_redir		*parse_redirections(t_token **tokens);
 void		free_pipeline(t_pipeline *pipeline);
 
 /* ========== EXPANDER ========== */
+/* Main expander functions */
 /*
-** Expand environment variables in pipeline commands
+** Structure to hold expansion context
+** Used to avoid passing too many arguments (>4) to functions
 */
-void		expander(t_pipeline *pipeline, t_env *env);
+typedef struct s_exp_ctx
+{
+	char	*str;
+	char	*result;
+	int		*i;
+	int		*j;
+	t_env	*env;
+	int		exit_status;
+}	t_exp_ctx;
 
-/*
-** Expand variables in a string ($VAR and $?)
-*/
-char		*expand_variables(char *str, t_env *env, int exit_status);
+typedef struct s_quote_ctx
+{
+	int		i;
+	int		j;
+	char	quote;
+	char	*str;
+	char	*res;
+}	t_quote_ctx;
 
-/*
-** Get environment variable value by key
-*/
-char		*get_env_value(t_env *env, char *key);
+/* Main expander functions */
+char	*get_env_value(t_env *env, char *key);
+char	*expand_variables(char *str, t_env *env, int exit_status);
+void	expander(t_pipeline *pipeline, t_env *env);
+
+/* Helper functions for variable expansion */
+void	expand_exit_status(char *result, int *j, int exit_status);
+void	expand_var_name(t_exp_ctx *ctx);
+void	process_dollar(t_exp_ctx *ctx);
+
+/* Helper functions for argument and command processing */
+void	expand_arg(char **arg, t_env *env, int exit_status);
+void	expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status);
+void	expand_redirections(t_redir *redir, t_env *env, int exit_status);
+void	expand_pipeline_cmds(t_cmd *cmds, t_env *env, int exit_status);
+
+/* Quote removal */
+char	*remove_quotes(char *str);
 
 /* ========== EXECUTOR ========== */
 /*

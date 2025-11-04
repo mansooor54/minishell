@@ -6,11 +6,12 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/04 15:10:00 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/04 15:45:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
+#include "expander.h"
 
 /*
 ** get_env_value - Get environment variable value by key
@@ -47,18 +48,16 @@ char	*get_env_value(t_env *env, char *key)
 **
 ** Return: void
 */
-static void	process_quote_char(t_quote_ctx *ctx)
+static void	process_quote_char(char *str, char *result,
+				int *i, int *j, char *quote)
 {
-	char	c;
-
-	c = ctx->str[ctx->i];
-	if (!ctx->quote && (c == '\'' || c == '"'))
-		ctx->quote = c;
-	else if (ctx->quote && c == ctx->quote)
-		ctx->quote = 0;
+	if (!*quote && (str[*i] == '\'' || str[*i] == '"'))
+		*quote = str[*i];
+	else if (*quote && str[*i] == *quote)
+		*quote = 0;
 	else
-		ctx->res[ctx->j++] = c;
-	ctx->i++;
+		result[(*j)++] = str[*i];
+	(*i)++;
 }
 
 /*
@@ -73,20 +72,23 @@ static void	process_quote_char(t_quote_ctx *ctx)
 */
 char	*remove_quotes(char *str)
 {
-	t_quote_ctx	ctx;
+	char	*result;
+	int		i;
+	int		j;
+	char	quote;
 
-	ctx.str = str;
-	ctx.res = malloc(ft_strlen(str) + 1);
-	if (!ctx.res)
+	result = malloc(ft_strlen(str) + 1);
+	if (!result)
 		return (NULL);
-	ctx.i = 0;
-	ctx.j = 0;
-	ctx.quote = 0;
-	while (ctx.str[ctx.i])
-		process_quote_char(&ctx);
-	ctx.res[ctx.j] = '\0';
-	return (ctx.res);
+	i = 0;
+	j = 0;
+	quote = 0;
+	while (str[i])
+		process_quote_char(str, result, &i, &j, &quote);
+	result[j] = '\0';
+	return (result);
 }
+
 /*
 ** expand_exit_status - Expand $? to exit status value
 **
@@ -98,7 +100,6 @@ char	*remove_quotes(char *str)
 **
 ** Return: void
 */
-
 void	expand_exit_status(char *result, int *j, int exit_status)
 {
 	char	*tmp;
@@ -113,13 +114,9 @@ void	expand_exit_status(char *result, int *j, int exit_status)
 ** expand_var_name - Expand environment variable by name
 **
 ** Extracts variable name from input string and replaces it with its value
-** from the environment.
+** from the environment. Uses context structure to avoid >4 arguments.
 **
-** @param str: Source string
-** @param result: Destination buffer
-** @param i: Pointer to source index
-** @param j: Pointer to destination index
-** @param env: Environment linked list
+** @param ctx: Expansion context structure
 **
 ** Return: void
 */
