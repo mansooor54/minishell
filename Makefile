@@ -16,26 +16,9 @@ NAME = minishell
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -g
 INCLUDES = -I. -I./libft 
-LDFLAGS = -lreadline -L./libft -lft
-
-# Try to detect Homebrew readline and ncurses on macOS; otherwise fall back
-READLINE_PREFIX := $(shell brew --prefix readline 2>/dev/null)
-NCURSES_PREFIX  := $(shell brew --prefix ncurses  2>/dev/null)
-
-ifeq ($(READLINE_PREFIX),)
-    # Linux or no Homebrew detected
-    CFLAGS  +=
-    LDFLAGS += -lreadline -lhistory -lncurses
-else
-    CFLAGS  += -I$(READLINE_PREFIX)/include
-    LDFLAGS += -L$(READLINE_PREFIX)/lib -lreadline -lhistory
-    ifneq ($(NCURSES_PREFIX),)
-        LDFLAGS += -L$(NCURSES_PREFIX)/lib -lncurses
-    else
-        # Some macOS setups still need ncurses from system
-        LDFLAGS += -lncurses
-    endif
-endif
+READLINE_DIR = $(shell brew --prefix readline)
+CFLAGS += -I$(READLINE_DIR)/include
+LDFLAGS = -L$(READLINE_DIR)/lib -lreadline -L./libft -lft
 
 # Libft
 LIBFT_DIR = libft
