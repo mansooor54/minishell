@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 16:18:14 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,36 @@ static t_cmd	*parse_pipe_sequence(t_token **tokens)
 	return (cmds);
 }
 
+/* helpers */
+static void	append_pipeline(t_pipeline **head, t_pipeline *new_node)
+{
+	t_pipeline	*cur;
+
+	if (!new_node)
+		return ;
+	if (!*head)
+	{
+		*head = new_node;
+		return ;
+	}
+	cur = *head;
+	while (cur->next)
+		cur = cur->next;
+	cur->next = new_node;
+}
+
+/* helpers */
+static void	set_logic_and_advance(t_pipeline *pl, t_token **tokens)
+{
+	if (!tokens || !*tokens)
+		return ;
+	if ((*tokens)->type == TOKEN_AND || (*tokens)->type == TOKEN_OR)
+	{
+		pl->logic_op = (*tokens)->type;
+		*tokens = (*tokens)->next;
+	}
+}
+
 /*
 ** Main parser function
 ** Parses tokens into pipeline structures with logical operators
@@ -68,32 +98,18 @@ static t_cmd	*parse_pipe_sequence(t_token **tokens)
 */
 t_pipeline	*parser(t_token *tokens)
 {
-	t_pipeline	*pipelines;
-	t_pipeline	*new_pipeline;
-	t_pipeline	*current;
+	t_pipeline	*head;
+	t_pipeline	*node;
 
-	pipelines = NULL;
+	head = NULL;
 	while (tokens)
 	{
-		new_pipeline = create_pipeline();
-		new_pipeline->cmds = parse_pipe_sequence(&tokens);
-		if (tokens && (tokens->type == TOKEN_AND
-				|| tokens->type == TOKEN_OR))
-		{
-			new_pipeline->logic_op = tokens->type;
-			tokens = tokens->next;
-		}
-		if (!pipelines)
-			pipelines = new_pipeline;
-		else
-		{
-			current = pipelines;
-			while (current->next)
-				current = current->next;
-			current->next = new_pipeline;
-		}
+		node = create_pipeline();
+		node->cmds = parse_pipe_sequence(&tokens);
+		set_logic_and_advance(node, &tokens);
+		append_pipeline(&head, node);
 		if (!tokens || tokens->type == TOKEN_EOF)
 			break ;
 	}
-	return (pipelines);
+	return (head);
 }
