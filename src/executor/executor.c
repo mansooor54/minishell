@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 13:31:53 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,8 @@
 **         - Full path from PATH if found and executable
 **         - NULL if PATH doesn't exist or command not found
 */
+
+
 char	*find_executable(char *cmd, t_env *env)
 {
 	char	*path_env;
@@ -92,34 +94,39 @@ char	*find_executable(char *cmd, t_env *env)
 **
 ** Return: void (updates shell->exit_status)
 */
+static void	child_exec_external(t_cmd *cmd, t_shell *shell, char *path)
+{
+	if (setup_redirections(cmd->redirs) == -1)
+		exit(1);
+	execve(path, cmd->args, env_to_array(shell->env));
+	exit(1);
+}
+
+static void	wait_and_set_status(pid_t pid, t_shell *shell)
+{
+	int	st;
+
+	waitpid(pid, &st, 0);
+	if (WIFEXITED(st))
+		shell->exit_status = WEXITSTATUS(st);
+}
+
 static void	execute_external(t_cmd *cmd, t_shell *shell)
 {
-	pid_t	pid;
-	int		status;
 	char	*path;
-	char	**envp;
+	pid_t	pid;
 
 	path = find_executable(cmd->args[0], shell->env);
+
 	if (!path)
-	{
-		ft_putstr_fd("minishell: ", 2);
-		ft_putstr_fd(cmd->args[0], 2);
-		ft_putendl_fd(": command not found", 2);
-		shell->exit_status = 127;
-		return ;
-	}
+		return (ft_putstr_fd("minishell: ", 2),
+			ft_putstr_fd(cmd->args[0], 2),
+			ft_putendl_fd(": command not found", 2),
+			(void)(shell->exit_status = 127));
 	pid = fork();
 	if (pid == 0)
-	{
-		if (setup_redirections(cmd->redirs) == -1)
-			exit(1);
-		envp = env_to_array(shell->env);
-		execve(path, cmd->args, envp);
-		exit(1);
-	}
-	waitpid(pid, &status, 0);
-	if (WIFEXITED(status))
-		shell->exit_status = WEXITSTATUS(status);
+		child_exec_external(cmd, shell, path);
+	wait_and_set_status(pid, shell);
 	free(path);
 }
 
@@ -184,8 +191,8 @@ static void	execute_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 ** the parent shell's state, which wouldn't work if executed in a child process.
 **
 ** @param cmd: Command structure containing:
-**             - args: NULL-terminated array of arguments (args[0] is command name)
-**             - redirs: Linked list of redirections (can be NULL)
+**      - args: NULL-terminated array of arguments (args[0] is command name)
+**      - redirs: Linked list of redirections (can be NULL)
 ** @param shell: Shell state structure containing environment and exit status
 **
 ** Return: void (updates shell->exit_status)

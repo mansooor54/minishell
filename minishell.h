@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 15:17:50 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,6 +117,21 @@ typedef struct s_shell
 */
 extern t_shell	g_shell;
 
+typedef struct s_child_io
+{
+	int			prev_rd;
+	int			pipe_rd;
+	int			pipe_wr;
+	int			has_next;
+}	t_child_io;
+
+typedef struct s_pipe_ctx
+{
+	t_shell		*shell;
+	pid_t		*pids;
+	int			*prev_rd;
+}	t_pipe_ctx;
+
 /* ========== LEXER ========== */
 /*
 ** Tokenize input string into a linked list of tokens
@@ -185,54 +200,61 @@ typedef struct s_quote_ctx
 }	t_quote_ctx;
 
 /* Main expander functions */
-char	*get_env_value(t_env *env, char *key);
-char	*expand_variables(char *str, t_env *env, int exit_status);
-void	expander(t_pipeline *pipeline, t_env *env);
+char		*get_env_value(t_env *env, char *key);
+char		*expand_variables(char *str, t_env *env, int exit_status);
+void		expander(t_pipeline *pipeline, t_env *env);
 
 /* Helper functions for variable expansion */
-void	expand_exit_status(char *result, int *j, int exit_status);
-void	expand_var_name(t_exp_ctx *ctx);
-void	process_dollar(t_exp_ctx *ctx);
+void		expand_exit_status(char *result, int *j, int exit_status);
+void		expand_var_name(t_exp_ctx *ctx);
+void		process_dollar(t_exp_ctx *ctx);
 
 /* Helper functions for argument and command processing */
-void	expand_arg(char **arg, t_env *env, int exit_status);
-void	expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status);
-void	expand_redirections(t_redir *redir, t_env *env, int exit_status);
-void	expand_pipeline_cmds(t_cmd *cmds, t_env *env, int exit_status);
+void		expand_arg(char **arg, t_env *env, int exit_status);
+void		expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status);
+void		expand_redirections(t_redir *redir, t_env *env, int exit_status);
+void		expand_pipeline_cmds(t_cmd *cmds, t_env *env, int exit_status);
+char		**env_to_array(t_env *env);
+void		free_strv(char **v);   // helper to free NULL-terminated vector
+
 
 /* Quote removal */
-char	*remove_quotes(char *str);
+char		*remove_quotes(char *str);
 
 /* ========== EXECUTOR ========== */
 /*
 ** Execute a pipeline with logical operators
 */
 void		executor(t_pipeline *pipeline, t_shell *shell);
+int			init_pipeline(int cmd_count, pid_t **pids);
+int			create_pipe_if_needed(t_cmd *current, int pipefd[2]);
+int			count_commands(t_cmd *cmds);
+int			wait_for_children(pid_t *pids, int count);
+int			execute_pipeline_loop(t_cmd *cmds, t_shell *shell,
+				pid_t *pids, int cmd_count);
 
-/*
-** Execute a single pipeline
-*/
-void		execute_pipeline(t_pipeline *pipeline, t_shell *shell);
+/* Execute a single pipeline */
+int			execute_pipeline(t_cmd *cmds, t_shell *shell);
 
-/*
-** Execute a single command
-*/
+/* Execute a single command */
 void		execute_command(t_cmd *cmd, t_shell *shell);
 
-/*
-** Setup redirections for a command
-*/
+/* Setup redirections for a command */
 int			setup_redirections(t_redir *redirs);
+int			setup_child_fds(int pipefd[2], int prev_read_fd, int has_next);
 
-/*
-** Find executable in PATH or return absolute/relative path
-*/
+
+/* Find executable in PATH or return absolute/relative path */
 char		*find_executable(char *cmd, t_env *env);
+void		print_error(const char *function, const char *message);
+void		safe_close(int fd);
+void		cleanup_pipe(int pipefd[2]);
+pid_t		create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io);
+int			update_prev_fd(int prev_read_fd, int pipefd[2], int has_next);
+int			execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx);
 
 /* ========== BUILTINS ========== */
-/*
-** Check if command is a builtin
-*/
+/* Check if command is a builtin */
 int			is_builtin(char *cmd);
 
 /*
