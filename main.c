@@ -139,6 +139,44 @@ static void	shell_loop(t_shell *shell)
 	}
 }
 
+/* pseudo, adapt to your code */
+/* build "KEY=VALUE" and push into NULL-terminated env array */
+int	append_env(char ***arr, size_t *n, const char *k, const char *v)
+{
+	size_t	lenk;
+	size_t	lenv;
+	size_t	i;
+	char	*kv;
+	char	**newarr;
+
+	if (!arr || !n || !k || !*k || v == NULL)
+		return (0);
+	lenk = ft_strlen(k);
+	lenv = ft_strlen(v);
+	kv = (char *)malloc(lenk + 1 + lenv + 1);
+	if (!kv)
+		return (-1);
+	ft_memcpy(kv, k, lenk);
+	kv[lenk] = '=';
+	ft_memcpy(kv + lenk + 1, v, lenv);
+	kv[lenk + 1 + lenv] = '\0';
+	newarr = (char **)malloc(sizeof(char *) * (*n + 2));
+	if (!newarr)
+		return (free(kv), -1);
+	i = 0;
+	while (i < *n)
+	{
+		newarr[i] = (*arr)[i];
+		i++;
+	}
+	newarr[*n] = kv;
+	newarr[*n + 1] = NULL;
+	free(*arr);
+	*arr = newarr;
+	*n += 1;
+	return (0);
+}
+
 /*
 ** main - Entry point of the minishell program
 **

@@ -48,25 +48,58 @@ int	execute_pipeline_loop(t_cmd *cmds, t_shell *shell,
 	return (0);
 }
 
-int	execute_pipeline(t_cmd *cmds, t_shell *shell)
+/* helper: run multi-command pipeline */
+static int	execute_multi_pipeline(t_cmd *cmds, t_shell *shell, int count)
 {
-	int		cmd_count;
 	pid_t	*pids;
-	int		exit_status;
+	int		ret;
 
-	if (!cmds)
-		return (0);
-	cmd_count = count_commands(cmds);
-	if (init_pipeline(cmd_count, &pids) == -1)
+	if (init_pipeline(count, &pids) == -1)
 		return (1);
-	if (execute_pipeline_loop(cmds, shell, pids, cmd_count) == -1)
+	if (execute_pipeline_loop(cmds, shell, pids, count) == -1)
 	{
 		free(pids);
 		return (1);
 	}
-	exit_status = wait_for_children(pids, cmd_count);
+	ret = wait_for_children(pids, count);
 	free(pids);
-	return (exit_status);
+	return (ret);
+}
+
+/* public entry used by executor() */
+int	execute_pipeline(t_cmd *cmds, t_shell *shell)
+{
+	int	count;
+	int	ret;
+
+	if (!cmds)
+		return (0);
+	count = count_commands(cmds);
+	if (count == 1)
+	{
+		ret = execute_single_builtin_parent(cmds, shell);
+		if (ret != -1)
+		{
+			shell->exit_status = ret;
+			return (ret);
+		}
+		execute_command(cmds, shell);
+		return (shell->exit_status);
+	}
+	return (execute_multi_pipeline(cmds, shell, count));
+}
+
+/* run one builtin without forking if no redirs */
+int	execute_single_builtin_parent(t_cmd *cmd, t_shell *shell)
+{
+	if (!cmd || !cmd->args || !cmd->args[0])
+		return (0);
+	if (!is_builtin(cmd->args[0]))
+		return (-1);
+	if (cmd->redirs != NULL)
+		return (-1);
+	expand_cmd_args(cmd, shell->env, shell->exit_status);
+	return (execute_builtin(cmd, shell));
 }
 
 int	wait_for_children(pid_t *pids, int count)

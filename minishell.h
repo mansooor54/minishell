@@ -232,6 +232,7 @@ int			count_commands(t_cmd *cmds);
 int			wait_for_children(pid_t *pids, int count);
 int			execute_pipeline_loop(t_cmd *cmds, t_shell *shell,
 				pid_t *pids, int cmd_count);
+int			execute_single_builtin_parent(t_cmd *cmd, t_shell *shell);
 
 /* Execute a single pipeline */
 int			execute_pipeline(t_cmd *cmds, t_shell *shell);
@@ -252,6 +253,8 @@ void		cleanup_pipe(int pipefd[2]);
 pid_t		create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io);
 int			update_prev_fd(int prev_read_fd, int pipefd[2], int has_next);
 int			execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx);
+char		**env_to_array(t_env *env);
+int			append_env(char ***arr, size_t *n, const char *k, const char *v);
 
 /* ========== BUILTINS ========== */
 /* Check if command is a builtin */
@@ -267,14 +270,12 @@ int			execute_builtin(t_cmd *cmd, t_shell *shell);
 */
 int			builtin_echo(char **args);
 
-/*
-** Builtin: cd - change directory (relative or absolute path)
-*/
-int			builtin_cd(char **args, t_env *env);
+/* Builtin: cd - change directory (relative or absolute path) */
+int			builtin_cd(char **args, t_env **env);
+char		*dup_cwd(void);
+char		*resolve_target(char **args, t_env *env, int *print_after);
 
-/*
-** Builtin: pwd - print working directory
-*/
+/* Builtin: pwd - print working directory */
 int			builtin_pwd(void);
 
 /*

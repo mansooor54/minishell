@@ -44,7 +44,7 @@ int	execute_builtin(t_cmd *cmd, t_shell *shell)
 	if (ft_strcmp(cmd->args[0], "echo") == 0)
 		return (builtin_echo(cmd->args));
 	if (ft_strcmp(cmd->args[0], "cd") == 0)
-		return (builtin_cd(cmd->args, shell->env));
+		return (builtin_cd(cmd->args, &shell->env));
 	if (ft_strcmp(cmd->args[0], "pwd") == 0)
 		return (builtin_pwd());
 	if (ft_strcmp(cmd->args[0], "export") == 0)
