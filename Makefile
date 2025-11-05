@@ -6,7 +6,7 @@
 #    By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#              #
-#    Updated: 2025/11/05 15:37:32 by malmarzo         ###   ########.fr        #
+#    Updated: 2025/11/05 16:06:29 by malmarzo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -29,6 +29,7 @@ SRC_DIR = src
 SRCS = main.c \
        $(SRC_DIR)/lexer/lexer.c \
        $(SRC_DIR)/lexer/lexer_utils.c \
+       $(SRC_DIR)/lexer/lexer_operator.c \
        $(SRC_DIR)/parser/parser.c \
        $(SRC_DIR)/parser/parser_pipeline.c \
        $(SRC_DIR)/expander/expander_pipeline.c \

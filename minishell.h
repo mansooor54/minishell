@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/05 15:45:46 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 16:04:09 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -354,5 +354,8 @@ void		free_array(char **arr);
 ** Join two strings and free the first one
 */
 char		*ft_strjoin_free(char *s1, char const *s2);
+
+/* ========== Lexer ========== */
+t_token		*get_operator_token(char **input);
 
 #endif

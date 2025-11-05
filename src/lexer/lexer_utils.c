@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 16:04:30 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,41 +59,6 @@ static int	extract_word(char *input, char **word)
 	ft_strncpy(*word, input, i);
 	(*word)[i] = '\0';
 	return (i);
-}
-
-/*
-** Identify and create operator token
-** Handles |, ||, &&, <, <<, >, >>
-*/
-static t_token	*get_operator_token(char **input)
-{
-	if (**input == '|' && *(*input + 1) == '|')
-	{
-		(*input) += 2;
-		return (create_token(TOKEN_OR, "||"));
-	}
-	if (**input == '|')
-		return ((*input)++, create_token(TOKEN_PIPE, "|"));
-	if (**input == '&' && *(*input + 1) == '&')
-	{
-		(*input) += 2;
-		return (create_token(TOKEN_AND, "&&"));
-	}
-	if (**input == '<' && *(*input + 1) == '<')
-	{
-		(*input) += 2;
-		return (create_token(TOKEN_REDIR_HEREDOC, "<<"));
-	}
-	if (**input == '<')
-		return ((*input)++, create_token(TOKEN_REDIR_IN, "<"));
-	if (**input == '>' && *(*input + 1) == '>')
-	{
-		(*input) += 2;
-		return (create_token(TOKEN_REDIR_APPEND, ">>"));
-	}
-	if (**input == '>')
-		return ((*input)++, create_token(TOKEN_REDIR_OUT, ">"));
-	return (NULL);
 }
 
 /*
