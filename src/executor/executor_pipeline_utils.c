@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/04 00:00:00 by your_login        #+#    #+#             */
-/*   Updated: 2025/11/05 15:05:03 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 15:47:05 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,4 +80,25 @@ int	count_commands(t_cmd *cmds)
 		current = current->next;
 	}
 	return (count);
+}
+
+/*
+** create_pipe_if_needed - Create pipe if not last command
+**
+** @param current: Current command
+** @param pipefd: Array to store pipe fds
+**
+** Return: 0 on success, -1 on error
+*/
+int	create_pipe_if_needed(t_cmd *current, int pipefd[2])
+{
+	if (current->next)
+	{
+		if (pipe(pipefd) == -1)
+		{
+			print_error("pipe", strerror(errno));
+			return (-1);
+		}
+	}
+	return (0);
 }

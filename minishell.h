@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/05 15:17:50 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 15:45:46 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,7 +216,7 @@ void		expand_redirections(t_redir *redir, t_env *env, int exit_status);
 void		expand_pipeline_cmds(t_cmd *cmds, t_env *env, int exit_status);
 char		**env_to_array(t_env *env);
 void		free_strv(char **v);   // helper to free NULL-terminated vector
-
+char		*join_cmd_path(char *dir, char *cmd);
 
 /* Quote removal */
 char		*remove_quotes(char *str);

@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/04 00:00:00 by your_login        #+#    #+#             */
-/*   Updated: 2025/11/05 14:39:26 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 15:46:41 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,27 +29,6 @@ int	init_pipeline(int cmd_count, pid_t **pids)
 	{
 		print_error("malloc", "failed to allocate pid array");
 		return (-1);
-	}
-	return (0);
-}
-
-/*
-** create_pipe_if_needed - Create pipe if not last command
-**
-** @param current: Current command
-** @param pipefd: Array to store pipe fds
-**
-** Return: 0 on success, -1 on error
-*/
-int	create_pipe_if_needed(t_cmd *current, int pipefd[2])
-{
-	if (current->next)
-	{
-		if (pipe(pipefd) == -1)
-		{
-			print_error("pipe", strerror(errno));
-			return (-1);
-		}
 	}
 	return (0);
 }
@@ -90,17 +69,56 @@ int	update_prev_fd(int prev_read_fd, int pipefd[2], int has_next)
 ** Return: 0 on success, -1 on error
 */
 /* was: (t_cmd*, t_shell*, pid_t*, int, int*) */
+
+/* prepare pipe + child io */
+static int	prepare_child_io(t_cmd *cmd, int prev_rd,
+				int pipefd[2], t_child_io *io)
+{
+	int	has_next;
+
+	has_next = 0;
+	if (cmd && cmd->next)
+		has_next = 1;
+	io->has_next = has_next;
+	io->prev_rd = prev_rd;
+	if (has_next)
+	{
+		if (pipe(pipefd) == -1)
+		{
+			print_error("pipe", strerror(errno));
+			return (-1);
+		}
+		io->pipe_rd = pipefd[0];
+		io->pipe_wr = pipefd[1];
+	}
+	else
+	{
+		io->pipe_rd = -1;
+		io->pipe_wr = -1;
+	}
+	return (0);
+}
+
+/* close fds and move read end to prev_rd */
+static void	finalize_after_fork(t_child_io *io, int pipefd[2], int *prev_rd)
+{
+	safe_close(*prev_rd);
+	if (io->has_next)
+	{
+		safe_close(pipefd[1]);
+		*prev_rd = pipefd[0];
+	}
+	else
+		*prev_rd = -1;
+}
+
 int	execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx)
 {
 	int			pipefd[2];
 	t_child_io	io;
 
-	io.has_next = (cmd->next != NULL);
-	if (io.has_next && pipe(pipefd) == -1)
-		return (print_error("pipe", strerror(errno)), -1);
-	io.pipe_rd = io.has_next ? pipefd[0] : -1;
-	io.pipe_wr = io.has_next ? pipefd[1] : -1;
-	io.prev_rd = *ctx->prev_rd;
+	if (prepare_child_io(cmd, *ctx->prev_rd, pipefd, &io) == -1)
+		return (-1);
 	ctx->pids[index] = create_child_process(cmd, ctx->shell, &io);
 	if (ctx->pids[index] == -1)
 	{
@@ -111,13 +129,6 @@ int	execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx)
 		}
 		return (-1);
 	}
-	safe_close(*ctx->prev_rd);
-	if (io.has_next)
-	{
-		safe_close(pipefd[1]);
-		*ctx->prev_rd = pipefd[0];
-	}
-	else
-		*ctx->prev_rd = -1;
+	finalize_after_fork(&io, pipefd, ctx->prev_rd);
 	return (0);
 }

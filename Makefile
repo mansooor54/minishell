@@ -6,7 +6,7 @@
 #    By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#              #
-#    Updated: 2025/11/05 13:03:13 by malmarzo         ###   ########.fr        #
+#    Updated: 2025/11/05 15:37:32 by malmarzo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -35,6 +35,7 @@ SRCS = main.c \
        $(SRC_DIR)/expander/expander_utils.c \
        $(SRC_DIR)/expander/expander.c \
        $(SRC_DIR)/executor/executor.c \
+       $(SRC_DIR)/executor/executor_path.c \
        $(SRC_DIR)/executor/executor_child_fds.c \
        $(SRC_DIR)/executor/executor_child_run.c \
        $(SRC_DIR)/executor/executor_pipeline_loop.c \
