@@ -1,30 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parser_utils.c                                     :+:      :+:    :+:   */
+/*   lexer_operator.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/06 12:58:19 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/05 16:02:34 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-void	append_redir(t_redir **head, t_redir *new_redir)
+int	has_unclosed_quotes(char *str)
 {
-	t_redir	*current;
+	char	quote;
+	int		i;
 
-	if (!new_redir)
-		return ;
-	if (!*head)
+	quote = 0;
+	i = 0;
+	while (str[i])
 	{
-		*head = new_redir;
-		return ;
+		if (!quote && (str[i] == '\'' || str[i] == '"'))
+			quote = str[i];
+		else if (quote && str[i] == quote)
+			quote = 0;
+		i++;
 	}
-	current = *head;
-	while (current->next)
-		current = current->next;
-	current->next = new_redir;
+	return (quote != 0);
 }

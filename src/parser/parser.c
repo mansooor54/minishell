@@ -12,10 +12,6 @@
 
 #include "../../minishell.h"
 
-/*
-** Create a new redirection node
-** Allocates and initializes a redirection structure
-*/
 static t_redir	*create_redir(t_token_type type, char *file)
 {
 	t_redir	*redir;
@@ -29,12 +25,6 @@ static t_redir	*create_redir(t_token_type type, char *file)
 	return (redir);
 }
 
-/*
-** parse_single_redirection - Parse a single redirection from token stream
-**
-** Extracts one redirection operator and its target file.
-** Returns NULL if no redirection found or syntax error.
-*/
 static t_redir	*parse_single_redirection(t_token **tokens)
 {
 	t_redir	*redir;
@@ -58,10 +48,6 @@ static t_redir	*parse_single_redirection(t_token **tokens)
 	return (redir);
 }
 
-/*
-** Count arguments in token stream until pipe or logical operator
-** Returns the number of word tokens found
-*/
 static int	count_args(t_token *tokens)
 {
 	int	count;
@@ -84,11 +70,6 @@ static int	count_args(t_token *tokens)
 	return (count);
 }
 
-/*
-** Parse a single command with its arguments and redirections
-** Builds a command structure from tokens until pipe or end
-** Now correctly accumulates all redirections instead of overwriting
-*/
 t_cmd	*parse_command(t_token **tokens)
 {
 	t_cmd	*cmd;
@@ -99,6 +80,7 @@ t_cmd	*parse_command(t_token **tokens)
 	cmd = malloc(sizeof(t_cmd));
 	if (!cmd)
 		return (NULL);
+	cmd->expanded = 0;
 	arg_count = count_args(*tokens);
 	cmd->args = malloc(sizeof(char *) * (arg_count + 1));
 	cmd->redirs = NULL;
@@ -124,10 +106,6 @@ t_cmd	*parse_command(t_token **tokens)
 	return (cmd);
 }
 
-/*
-** Free all commands in the pipeline
-** Recursively frees command arguments and redirections
-*/
 void	free_pipeline(t_pipeline *pipeline)
 {
 	t_pipeline	*tmp_pipe;

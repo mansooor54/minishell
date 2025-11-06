@@ -41,6 +41,8 @@ int	is_builtin(char *cmd)
 */
 int	execute_builtin(t_cmd *cmd, t_shell *shell)
 {
+	if (!cmd || !cmd->args || !cmd->args[0])
+		return (0);
 	if (ft_strcmp(cmd->args[0], "echo") == 0)
 		return (builtin_echo(cmd->args));
 	if (ft_strcmp(cmd->args[0], "cd") == 0)

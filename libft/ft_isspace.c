@@ -1,30 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parser_utils.c                                     :+:      :+:    :+:   */
+/*   ft_isspace.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/06 12:58:19 by malmarzo         ###   ########.fr       */
+/*   Created: 2025/01/16 09:22:13 by malmarzo          #+#    #+#             */
+/*   Updated: 2025/01/16 09:22:13 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "libft.h"
 
-void	append_redir(t_redir **head, t_redir *new_redir)
+int	ft_isspace(char c)
 {
-	t_redir	*current;
-
-	if (!new_redir)
-		return ;
-	if (!*head)
-	{
-		*head = new_redir;
-		return ;
-	}
-	current = *head;
-	while (current->next)
-		current = current->next;
-	current->next = new_redir;
+	return (c == ' ' || (c >= 9 && c <= 13));
 }
+

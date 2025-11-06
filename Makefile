@@ -13,7 +13,7 @@
 NAME = minishell
 
 # Compiler and flags
-CC = gcc
+CC = cc
 CFLAGS = -Wall -Wextra -Werror -g
 INCLUDES = -I. -I./libft 
 READLINE_DIR = $(shell brew --prefix readline)
@@ -26,7 +26,7 @@ LIBFT = $(LIBFT_DIR)/libft.a
 
 # Source files
 SRC_DIR = src
-SRCS = main.c \
+SRCS = minishell.c \
        $(SRC_DIR)/builtins/builtins.c \
        $(SRC_DIR)/builtins/builtin_echo.c \
        $(SRC_DIR)/builtins/builtin_cd.c \
@@ -36,8 +36,10 @@ SRCS = main.c \
        $(SRC_DIR)/builtins/builtin_export.c \
        $(SRC_DIR)/builtins/builtin_unset.c \
        $(SRC_DIR)/builtins/builtin_exit.c \
-       $(SRC_DIR)/environment/env_array.c \
        $(SRC_DIR)/environment/env.c \
+       $(SRC_DIR)/environment/env_node.c \
+       $(SRC_DIR)/environment/env_utils.c \
+       $(SRC_DIR)/environment/env_array.c \
        $(SRC_DIR)/expander/expander_pipeline.c \
        $(SRC_DIR)/expander/expander_utils.c \
        $(SRC_DIR)/expander/expander.c \
@@ -53,11 +55,10 @@ SRCS = main.c \
        $(SRC_DIR)/lexer/lexer.c \
        $(SRC_DIR)/lexer/lexer_utils.c \
        $(SRC_DIR)/lexer/lexer_operator.c \
+       $(SRC_DIR)/lexer/lexer_unclose.c \
        $(SRC_DIR)/parser/parser.c \
        $(SRC_DIR)/parser/parser_utils.c \
        $(SRC_DIR)/parser/parser_pipeline.c \
-       $(SRC_DIR)/utils/env_node.c \
-       $(SRC_DIR)/utils/env_utils.c \
        $(SRC_DIR)/utils/utils.c \
        $(SRC_DIR)/signals/signals.c \
        minishell_logo.c
@@ -100,5 +101,9 @@ fclean: clean
 	@make -C $(LIBFT_DIR) fclean
 
 re: fclean all
+
+leak: all
+	valgrind --leak-check=full \
+	--show-leak-kinds=all --track-fds=all --trace-children=yes ./$(NAME)
 
 .PHONY: all clean fclean re

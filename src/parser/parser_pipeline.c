@@ -91,11 +91,6 @@ static void	set_logic_and_advance(t_pipeline *pl, t_token **tokens)
 	}
 }
 
-/*
-** Main parser function
-** Parses tokens into pipeline structures with logical operators
-** Handles && and || for bonus part
-*/
 t_pipeline	*parser(t_token *tokens)
 {
 	t_pipeline	*head;

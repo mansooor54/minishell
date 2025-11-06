@@ -79,4 +79,3 @@ void	remove_env_node(t_env **env, char *key)
 		current = current->next;
 	}
 }
-

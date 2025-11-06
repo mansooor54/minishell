@@ -44,7 +44,7 @@ static void	execute_external_child(t_cmd *cmd, t_shell *shell, char *path)
 		exit(1);
 	}
 	execve(path, cmd->args, envp);
-	free_strv(envp);
+	free_array(envp);
 	free(path);
 	print_error("execve", strerror(errno));
 	exit(126);
@@ -113,17 +113,4 @@ pid_t	create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io)
 		exit(1);
 	}
 	return (pid);
-}
-
-/* helper to free NULL-terminated vector*/
-void	free_strv(char **v)
-{
-	int	i;
-
-	i = 0;
-	if (!v)
-		return ;
-	while (v[i])
-		free(v[i++]);
-	free(v);
 }

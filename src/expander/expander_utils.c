@@ -12,6 +12,11 @@
 
 #include "../../minishell.h"
 
+static int is_name_char(int c)
+{
+	return (ft_isalnum((unsigned char)c) || c == '_');
+}
+
 void	process_dollar(t_exp_ctx *ctx)
 {
 	(*(ctx->i))++;
@@ -20,16 +25,10 @@ void	process_dollar(t_exp_ctx *ctx)
 		expand_exit_status(ctx->result, ctx->j, ctx->exit_status);
 		(*(ctx->i))++;
 	}
+	else if (is_name_char(ctx->str[*(ctx->i)]))
+ 		expand_var_name(ctx);
 	else
-		expand_var_name(ctx);
-}
-
-void	update_quote_state(char *str, int i, char *in_quote)
-{
-	if (!*in_quote && (str[i] == '\'' || str[i] == '"'))
-		*in_quote = str[i];
-	else if (*in_quote && str[i] == *in_quote)
-		*in_quote = 0;
+		ctx->result[(*(ctx->j))++] = '$';
 }
 
 char	*expand_variables(char *str, t_env *env, int exit_status)
@@ -40,7 +39,7 @@ char	*expand_variables(char *str, t_env *env, int exit_status)
 	int			j;
 	char		in_quote;
 	char		*result;
-
+	
 	if (!str)
 		return (NULL);
 	max_size = ft_strlen(str) * 10 + 4096;
@@ -54,18 +53,25 @@ char	*expand_variables(char *str, t_env *env, int exit_status)
 	ctx.result = result;
 	ctx.i = &i;
 	ctx.j = &j;
-	ctx.in_quote = in_quote;
 	ctx.env = env;
 	ctx.exit_status = exit_status;
-	while (str[i] && j < (int)max_size - 1)
-	{
-		update_quote_state(str, i, &in_quote);
-		ctx.in_quote = in_quote;
-		if (str[i] == '$' && in_quote != '\'')
-			process_dollar(&ctx);
-		else
-			result[j++] = str[i++];
-	}
+	
+	while (str[i])
+    {
+        if ((str[i] == '\'' || str[i] == '"')) {
+            if (!in_quote) in_quote = str[i++];
+            else if (in_quote == str[i]) { in_quote = 0; i++; }
+            else result[j++] = str[i++];
+            continue;
+        }
+
+        if (str[i] == '$' && in_quote != '\'') {
+            process_dollar(&ctx);
+            continue;
+        }
+
+        result[j++] = str[i++];
+    }
 	result[j] = '\0';
 	return (result);
 }

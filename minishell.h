@@ -2,11 +2,11 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
+/*                                                    +:+ +:+         +:+      */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/06 15:05:03 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/07 20:55:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,13 +25,9 @@
 # include <errno.h>
 # include <readline/readline.h>
 # include <readline/history.h>
-# include <math.h>
 # include "libft/libft.h"
 
-/*
-** Token types for lexer
-** Used to identify different elements in the command line input
-*/
+/* ===================== TOKENS ===================== */
 typedef enum e_token_type
 {
 	TOKEN_WORD,
@@ -45,10 +41,6 @@ typedef enum e_token_type
 	TOKEN_EOF
 }	t_token_type;
 
-/*
-** Token structure
-** Represents a single token from the lexer with its type and value
-*/
 typedef struct s_token
 {
 	t_token_type	type;
@@ -56,10 +48,7 @@ typedef struct s_token
 	struct s_token	*next;
 }	t_token;
 
-/*
-** Redirection structure
-** Stores information about input/output redirections for a command
-*/
+/* ===================== PARSED NODES ===================== */
 typedef struct s_redir
 {
 	t_token_type	type;
@@ -67,21 +56,14 @@ typedef struct s_redir
 	struct s_redir	*next;
 }	t_redir;
 
-/*
-** Command structure
-** Contains command arguments and associated redirections
-*/
 typedef struct s_cmd
 {
 	char			**args;
 	t_redir			*redirs;
 	struct s_cmd	*next;
+	int				expanded; /* 0/1 guard to avoid double expansion */
 }	t_cmd;
 
-/*
-** Pipeline structure with logical operators
-** Represents a pipeline of commands with optional logical operators (&&, ||)
-*/
 typedef struct s_pipeline
 {
 	t_cmd				*cmds;
@@ -89,10 +71,7 @@ typedef struct s_pipeline
 	struct s_pipeline	*next;
 }	t_pipeline;
 
-/*
-** Environment variable structure
-** Stores key-value pairs for environment variables
-*/
+/* ===================== ENV ===================== */
 typedef struct s_env
 {
 	char			*key;
@@ -100,44 +79,33 @@ typedef struct s_env
 	struct s_env	*next;
 }	t_env;
 
-/*
-** Main shell data structure
-** Contains all shell state including environment and exit status
-*/
+/* ===================== SHELL STATE ===================== */
 typedef struct s_shell
 {
-	t_env		*env;
-	int			exit_status;
-	int			should_exit;
+	t_env	*env;
+	int		exit_status;
+	int		should_exit;
 }	t_shell;
 
-/*
-** Global shell instance for signal handling
-** Required to access shell state from signal handlers
-** This is the only global variable allowed by the subject
-*/
+extern t_shell	g_shell;
 
+/* ===================== EXECUTION AUX TYPES ===================== */
 typedef struct s_child_io
 {
-	int			prev_rd;
-	int			pipe_rd;
-	int			pipe_wr;
-	int			has_next;
+	int	prev_rd;
+	int	pipe_rd;
+	int	pipe_wr;
+	int	has_next;
 }	t_child_io;
 
 typedef struct s_pipe_ctx
 {
-	t_shell		*shell;
-	pid_t		*pids;
-	int			*prev_rd;
+	t_shell	*shell;
+	pid_t	*pids;
+	int		*prev_rd;
 }	t_pipe_ctx;
 
-extern t_shell	g_shell;
-
-/*
-** Structure to hold expansion context
-** Used to avoid passing too many arguments (>4) to functions
-*/
+/* ===================== EXPANSION CTX ===================== */
 typedef struct s_exp_ctx
 {
 	char	*str;
@@ -158,67 +126,36 @@ typedef struct s_quote_ctx
 	char	*res;
 }	t_quote_ctx;
 
-
-/* ========== LEXER ========== */
-/* zokenize input string into a linked list of tokens */
+/* ===================== LEXER ===================== */
+/* Tokenize input string into a linked list of tokens */
 t_token		*lexer(char *input);
-
-/*
-** Create a new token with given type and value
-*/
 t_token		*create_token(t_token_type type, char *value);
-
-/*
-** Add a token to the end of the token list
-*/
 void		add_token(t_token **tokens, t_token *new_token);
-
-/*
-** Free all tokens in the list
-*/
 void		free_tokens(t_token *tokens);
+int			has_unclosed_quotes(char *str);
+t_token		*get_operator_token(char **input);
 
-/* ========== PARSER ========== */
-/* Parse tokens into a pipeline structure */
+/* ===================== PARSER ===================== */
 t_pipeline	*parser(t_token *tokens);
-
-/* Parse a single command from tokens */
 t_cmd		*parse_command(t_token **tokens);
-
-/* Parse redirections for a command */
 t_redir		*parse_redirections(t_token **tokens);
-
-/* Free entire pipeline structure */
-void		free_pipeline(t_pipeline *pipeline);
-size_t		calculate_expansion_size(char *str, t_env *env, int exit_status);
 void		append_redir(t_redir **head, t_redir *new_redir);
+void		free_pipeline(t_pipeline *pipeline);
 
-/* ========== EXPANDER ========== */
-/* Main expander functions */
+/* ===================== EXPANDER ===================== */
 char		*get_env_value(t_env *env, char *key);
 char		*expand_variables(char *str, t_env *env, int exit_status);
 void		expander(t_pipeline *pipeline, t_env *env);
-
-/* Helper functions for variable expansion */
 void		expand_exit_status(char *result, int *j, int exit_status);
 void		expand_var_name(t_exp_ctx *ctx);
 void		process_dollar(t_exp_ctx *ctx);
-
-/* Helper functions for argument and command processing */
 void		expand_arg(char **arg, t_env *env, int exit_status);
 void		expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status);
 void		expand_redirections(t_redir *redir, t_env *env, int exit_status);
 void		expand_pipeline_cmds(t_cmd *cmds, t_env *env, int exit_status);
-char		**env_to_array(t_env *env);
-void		free_strv(char **v);
-char		*join_cmd_path(char *dir, char *cmd);
 char		*remove_quotes(char *str);
-void		update_quote_state(char *str, int i, char *in_quote);
 
-/* ========== EXECUTOR ========== */
-/*
-** Execute a pipeline with logical operators
-*/
+/* ===================== EXECUTOR ===================== */
 void		executor(t_pipeline *pipeline, t_shell *shell);
 int			init_pipeline(int cmd_count, pid_t **pids);
 int			create_pipe_if_needed(t_cmd *current, int pipefd[2]);
@@ -227,14 +164,8 @@ int			wait_for_children(pid_t *pids, int count);
 int			execute_pipeline_loop(t_cmd *cmds, t_shell *shell,
 				pid_t *pids, int cmd_count);
 int			execute_single_builtin_parent(t_cmd *cmd, t_shell *shell);
-
-/* Execute a single pipeline */
 int			execute_pipeline(t_cmd *cmds, t_shell *shell);
-
-/* Execute a single command */
 void		execute_command(t_cmd *cmd, t_shell *shell);
-
-/* Setup redirections for a command */
 int			setup_redirections(t_redir *redirs);
 int			setup_child_fds(int pipefd[2], int prev_read_fd, int has_next);
 char		*find_executable(char *cmd, t_env *env);
@@ -244,122 +175,43 @@ void		cleanup_pipe(int pipefd[2]);
 pid_t		create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io);
 int			update_prev_fd(int prev_read_fd, int pipefd[2], int has_next);
 int			execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx);
-char		**env_to_array(t_env *env);
-int			append_env(char ***arr, size_t *n, const char *k, const char *v);
 
-/* ========== BUILTINS ========== */
-/* Check if command is a builtin */
+/* ===================== BUILTINS ===================== */
 int			is_builtin(char *cmd);
-
-/*
-** Execute a builtin command
-*/
 int			execute_builtin(t_cmd *cmd, t_shell *shell);
-
-/*
-** Builtin: echo - print arguments with optional -n flag
-*/
 int			builtin_echo(char **args);
-
-/* Builtin: cd - change directory (relative or absolute path) */
 int			builtin_cd(char **args, t_env **env);
 char		*dup_cwd(void);
 char		*resolve_target(char **args, t_env *env, int *print_after);
-
-/* Builtin: pwd - print working directory */
 int			builtin_pwd(void);
-
-/*
-** Builtin: export - set environment variables
-*/
 int			builtin_export(char **args, t_env **env);
-
-/*
-** Builtin: unset - remove environment variables
-*/
 int			builtin_unset(char **args, t_env **env);
-
-/*
-** Builtin: env - print all environment variables
-*/
 int			builtin_env(t_env *env);
-
-/*
-** Builtin: exit - exit the shell
-*/
 int			builtin_exit(char **args, t_shell *shell);
 
-/* ========== ENVIRONMENT ========== */
-/*
-** Initialize environment from envp array
-*/
+/* ===================== ENV MANAGEMENT ===================== */
 t_env		*init_env(char **envp);
-void		increment_shlvl(t_env **env);  /* ADD THIS LINE */
-
-/*
-** Create a new environment node
-*/
+void		increment_shlvl(t_env **env);
 t_env		*create_env_node(char *key, char *value);
-
-/*
-** Add environment node to list
-*/
 void		add_env_node(t_env **env, t_env *new_node);
-
-/*
-** Remove environment node by key
-*/
 void		remove_env_node(t_env **env, char *key);
-
-/*
-** Convert environment list to array
-*/
 char		**env_to_array(t_env *env);
-
-/*
-** Free all environment nodes
-*/
 void		free_env(t_env *env);
-
-/* ========== SIGNALS ========== */
-/*
-** Setup signal handlers for the shell
-*/
-void		setup_signals(void);
-
-/*
-** Handle SIGINT (Ctrl-C) signal
-*/
-void		handle_sigint(int sig);
-
-/*
-** Handle SIGQUIT (Ctrl-\) signal
-*/
-void		handle_sigquit(int sig);
-
-/* ========== UTILS ========== */
-/*
-** Free a NULL-terminated array of strings
-*/
-void		free_array(char **arr);
-
-/*
-** Join two strings and free the first one
-*/
-char		*ft_strjoin_free(char *s1, char const *s2);
-
-/* ========== Lexer ========== */
-t_token		*get_operator_token(char **input);
-
-/*===== Print Minishell Logo =====*/
-void		print_logo(void);
-
-/* core */
-void		init_shell(t_shell *shell, char **envp);
-void		shell_loop(t_shell *shell);
-
-/* env array */
 int			append_env(char ***arr, size_t *n, const char *k, const char *v);
 void		parse_env_string(char *env_str, char **key, char **value);
+
+/* ===================== SIGNALS ===================== */
+void		setup_signals(void);
+void		handle_sigint(int sig);
+void		handle_sigquit(int sig);
+
+/* ===================== UTILS ===================== */
+void		free_array(char **arr);
+char		*ft_strjoin_free(char *s1, char const *s2);
+void		print_logo(void);
+
+/* ===================== CORE ===================== */
+void		init_shell(t_shell *shell, char **envp);
+void		shell_loop(t_shell *shell);
 
 #endif

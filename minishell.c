@@ -14,23 +14,18 @@
 
 t_shell	g_shell;
 
-/*
-** process_line - Process a single line of user input
-**
-** This function implements the main shell pipeline:
-** 1. Lexer: Tokenizes the input string into a list of tokens
-** 2. Parser: Builds a command structure from the tokens
-** 3. Expander: Expands environment variables and removes quotes
-** 4. Executor: Executes the commands
-**
-** Each stage is responsible for freeing its own allocated memory.
-** If any stage fails, the function returns early.
-**
-** @param line: The input string to process
-** @param shell: Pointer to the shell structure containing state
-**
-** Return: void
-*/
+static int	is_all_space(const char *s)
+{
+	size_t i = 0;
+	while (s && s[i])
+	{
+		if (!ft_isspace((unsigned char)s[i]))
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
 static void	process_line(char *line, t_shell *shell)
 {
 	t_token		*tokens;
@@ -38,6 +33,12 @@ static void	process_line(char *line, t_shell *shell)
 
 	if (!line || !*line)
 		return ;
+	if (has_unclosed_quotes(line))
+	{
+		ft_putendl_fd("minishell: syntax error: unclosed quotes", 2);
+		shell->exit_status = 2;
+		return ;
+	}
 	tokens = lexer(line);
 	if (!tokens)
 		return ;
@@ -50,25 +51,6 @@ static void	process_line(char *line, t_shell *shell)
 	free_pipeline(pipeline);
 }
 
-/*
-** shell_loop - Main interactive loop of the shell
-**
-** This function implements the REPL (Read-Eval-Print-Loop):
-** 1. Display prompt "minishell> " using readline
-** 2. Read user input
-** 3. Add non-empty input to history
-** 4. Process the input line
-** 5. Free the input line
-** 6. Repeat until user exits
-**
-** The loop terminates when:
-** - User presses Ctrl-D (readline returns NULL)
-** - User executes the exit builtin (should_exit flag set)
-**
-** @param shell: Pointer to the shell structure
-**
-** Return: void
-*/
 void	shell_loop(t_shell *shell)
 {
 	char	*line;
@@ -81,7 +63,7 @@ void	shell_loop(t_shell *shell)
 			ft_putendl_fd("exit", 1);
 			break ;
 		}
-		if (*line)
+		if (*line && !is_all_space(line))
 		{
 			add_history(line);
 			process_line(line, shell);
@@ -90,12 +72,7 @@ void	shell_loop(t_shell *shell)
 	}
 }
 
-/* single global allowed by subject 
-** Global shell instance for signal handling
-** This is the only global variable used, as required by the subject
-** It allows signal handlers to access and modify shell state
-*/
-
+/* main.c */
 int	main(int argc, char **argv, char **envp)
 {
 	(void)argc;
@@ -105,6 +82,7 @@ int	main(int argc, char **argv, char **envp)
 	init_shell(&g_shell, envp);
 	setup_signals();
 	shell_loop(&g_shell);
+	rl_clear_history();
 	free_env(g_shell.env);
 	return (g_shell.exit_status);
 }

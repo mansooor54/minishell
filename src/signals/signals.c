@@ -42,5 +42,5 @@ void	handle_sigquit(int sig)
 void	setup_signals(void)
 {
 	signal(SIGINT, handle_sigint);
-	signal(SIGQUIT, SIG_IGN);
+	signal(SIGQUIT, handle_sigquit);
 }

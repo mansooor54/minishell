@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-static char	*build_kv_pair(const char *k, const char *v)
+static char	*build_keyvalue_pair(const char *k, const char *v)
 {
 	size_t	lenk;
 	size_t	lenv;
@@ -43,7 +43,7 @@ int	append_env(char ***arr, size_t *n, const char *k, const char *v)
 
 	if (!arr || !n)
 		return (0);
-	kv = build_kv_pair(k, v);
+	kv = build_keyvalue_pair(k, v);
 	if (!kv)
 		return (0);
 	newarr = malloc(sizeof(char *) * (*n + 2));
