@@ -45,6 +45,11 @@ t_redir	*parse_redirections(t_token **tokens)
 			|| (*tokens)->type == TOKEN_REDIR_APPEND
 			|| (*tokens)->type == TOKEN_REDIR_HEREDOC))
 	{
+		if (!(*tokens)->next || !(*tokens)->next->value)
+		{
+			// Print error: syntax error near unexpected token
+			return (NULL);
+		}
 		new_redir = create_redir((*tokens)->type, (*tokens)->next->value);
 		if (!redirs)
 			redirs = new_redir;
