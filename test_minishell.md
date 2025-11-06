@@ -1,162 +1,114 @@
-
-Here's a comprehensive test suite to verify your minishell is working correctly, especially after the bug fixes:
-🧪 Complete Test Suite for Minishell
-1. Basic Commands
+✅ Final Comprehensive Test Suite
+Now that the basic tests work, let's test more advanced scenarios:
+1. Complex Variable Expansion
 Bash
-# Test simple commands
-```bash
-minishell> echo hello world
-hello world
+minishell> export VAR1="Hello"
+minishell> export VAR2="World"
+minishell> echo $VAR1 $VAR2
+Hello World
 
-minishell> pwd
-/Users/malmarzo/Desktop/My_minishell/minishell
+minishell> echo "$VAR1 $VAR2"
+Hello World
 
+minishell> echo '$VAR1 $VAR2'
+$VAR1 $VAR2
+
+minishell> echo $VAR1$VAR2
+HelloWorld
+2. Exit Status Chain
+Bash
 minishell> ls
-Makefile  README.md  minishell  src  obj
-
-minishell> whoami
-malmarzo
-2. Environment Variables
-Bash
-```
-# Test $? (exit status)
-minishell> echo $?  ====> zsh: segmentation fault  ./minishell
+# ... files listed ...
+minishell> echo $?
 0
 
 minishell> ls /nonexistent
 ls: /nonexistent: No such file or directory
-minishell> echo $?  ====> zsh: segmentation fault  ./minishell
+minishell> echo $?
 1
 
-# Test variable expansion
-minishell> echo $USER  ====> zsh: segmentation fault  ./minishell
-malmarzo
+minishell> echo $?
+0
 
-minishell> echo $HOME
-/Users/malmarzo
+minishell> false
+minishell> echo $?
+1
 
-minishell> echo Hello $USER, your home is $HOME
-Hello malmarzo, your home is /Users/malmarzo
-3. SHLVL Testing
+minishell> true
+minishell> echo $?
+0
+3. SHLVL Nesting
 Bash
-# In your terminal
-$ echo $SHLVL   ====> zsh: segmentation fault  ./minishell
+# Terminal
+$ echo $SHLVL
 1
 
-# Start minishell
+# First minishell
 $ ./minishell
-minishell> echo $SHLVL  ====> zsh: segmentation fault  ./minishell
+minishell> echo $SHLVL
 2
+minishell> env | grep SHLVL
+SHLVL=2
 
-# Start another minishell inside
+# Second minishell (nested)
 minishell> ./minishell
 minishell> echo $SHLVL
 3
-
-# Check with env
 minishell> env | grep SHLVL
 SHLVL=3
 
-# Exit and verify it goes back
+# Exit back
 minishell> exit
 minishell> echo $SHLVL
 2
-4. Redirections (Bug #1 Fix - No Segfault)
-Bash
-# Test incomplete redirections (should NOT crash)
-minishell> ls >
-minishell: syntax error near unexpected token `newline'
-
-minishell> cat <
-minishell: syntax error near unexpected token `newline'
-
-minishell> echo hello >>
-minishell: syntax error near unexpected token `newline'
-
-# Test valid redirections
-minishell> echo "Hello World" > test.txt
-minishell> cat test.txt
-Hello World
-
-minishell> echo "Line 2" >> test.txt
-minishell> cat test.txt
-Hello World
-Line 2
-
-minishell> cat < test.txt
-Hello World
-Line 2
-
-minishell> cat < test.txt > output.txt
-minishell> cat output.txt
-Hello World
-Line 2
-5. Multiple Redirections (Bug #3 Fix - No Memory Leak)
+minishell> exit
+$ echo $SHLVL
+1
+4. Redirections Stress Test
 Bash
 # Create test files
-minishell> echo "File 1" > file1.txt
-minishell> echo "File 2" > file2.txt
-minishell> echo "File 3" > file3.txt
+minishell> echo "Test 1" > test1.txt
+minishell> echo "Test 2" > test2.txt
+minishell> echo "Test 3" > test3.txt
 
-# Test multiple input redirections (last one wins)
-minishell> cat < file1.txt < file2.txt < file3.txt
-File 3
+# Multiple input redirections
+minishell> cat < test1.txt < test2.txt < test3.txt
+Test 3
 
-# Test multiple output redirections (last one wins)
-minishell> echo "Test" > out1.txt > out2.txt > out3.txt
-minishell> cat out1.txt
-cat: out1.txt: No such file or directory
-minishell> cat out2.txt
-cat: out2.txt: No such file or directory
+# Multiple output redirections
+minishell> echo "Final" > out1.txt > out2.txt > out3.txt
 minishell> cat out3.txt
-Test
+Final
+minishell> cat out1.txt 2>/dev/null || echo "out1.txt doesn't exist (correct)"
+out1.txt doesn't exist (correct)
 
-# Mixed redirections
-minishell> cat < file1.txt > result.txt >> result2.txt
-minishell> cat result2.txt
-File 1
-6. Variable Expansion (Bug #2 Fix - No Buffer Overflow)
+# Append redirections
+minishell> echo "Line 1" > append.txt
+minishell> echo "Line 2" >> append.txt
+minishell> echo "Line 3" >> append.txt
+minishell> cat append.txt
+Line 1
+Line 2
+Line 3
+5. Pipes with Redirections
 Bash
-# Test large variable expansion
-minishell> export BIG_VAR="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-minishell> echo $BIG_VAR
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-
-# Test multiple variable expansions
-minishell> export A="Hello"
-minishell> export B="World"
-minishell> echo $A $B $A $B
-Hello World Hello World
-
-# Test variable in quotes
-minishell> echo "$USER is in $HOME"
-malmarzo is in /Users/malmarzo
-
-minishell> echo '$USER is in $HOME'
-$USER is in $HOME
-7. Pipes
-Bash
-# Simple pipe
-minishell> echo "hello world" | cat
+minishell> echo "hello world" | cat > piped.txt
+minishell> cat piped.txt
 hello world
 
-# Multiple pipes
-minishell> ls | grep minishell | cat
-minishell
+minishell> cat test1.txt | cat | cat | cat
+Test 1
 
-# Pipe with redirections
-minishell> echo "test" | cat > piped.txt
-minishell> cat piped.txt
+minishell> echo "test" | cat | cat > multi_pipe.txt
+minishell> cat multi_pipe.txt
 test
-
-# Long pipeline
-minishell> cat file1.txt | grep "File" | cat | cat
-File 1
-8. Builtins
+6. Builtin Commands
 Bash
-# cd
+# pwd
 minishell> pwd
 /Users/malmarzo/Desktop/My_minishell/minishell
+
+# cd
 minishell> cd src
 minishell> pwd
 /Users/malmarzo/Desktop/My_minishell/minishell/src
@@ -164,153 +116,156 @@ minishell> cd ..
 minishell> pwd
 /Users/malmarzo/Desktop/My_minishell/minishell
 
-# export and unset
-minishell> export MY_VAR="test value"
-minishell> echo $MY_VAR
-test value
-minishell> unset MY_VAR
-minishell> echo $MY_VAR
+# export
+minishell> export TEST="value with spaces"
+minishell> echo $TEST
+value with spaces
+
+# unset
+minishell> unset TEST
+minishell> echo $TEST
+
+minishell> echo $?
+0
 
 # env
 minishell> env | grep USER
 USER=malmarzo
 
-# exit
-minishell> exit
-$
-9. Quotes
+# echo with -n
+minishell> echo -n "no newline"
+no newlineminishell> 
+minishell> echo "with newline"
+with newline
+7. Edge Cases
 Bash
-# Single quotes (no expansion)
-minishell> echo '$USER'
-$USER
+# Empty variable
+minishell> echo $NONEXISTENT_VAR
+<empty line>
 
-# Double quotes (with expansion)
-minishell> echo "$USER"
-malmarzo
+# Dollar at end
+minishell> echo test$
+test$
 
-# Mixed quotes
-minishell> echo "Hello '$USER'"
-Hello '$USER'
+# Multiple dollars
+minishell> echo $$
+<process id>
 
-minishell> echo 'Hello "$USER"'
-Hello "$USER"
-10. Edge Cases
-Bash
+# Variable in middle of word
+minishell> export NAME="John"
+minishell> echo Hello$NAME!
+HelloJohn!
+
 # Empty command
 minishell> 
 minishell> 
 
-# Multiple spaces
-minishell> echo    hello     world
-hello world
+# Only spaces
+minishell>      
+minishell> 
+8. Quotes Edge Cases
+Bash
+minishell> echo "test"
+test
 
+minishell> echo 'test'
+test
+
+minishell> echo "test'test"
+test'test
+
+minishell> echo 'test"test'
+test"test
+
+minishell> echo "$USER's home is $HOME"
+malmarzo's home is /Users/malmarzo
+
+minishell> echo '$USER'"'"'s home is $HOME'
+$USER's home is $HOME
+9. Signal Handling
+Bash
+# Ctrl+C during command
+minishell> sleep 5
+^C
+minishell> echo $?
+130
+
+# Ctrl+C at prompt
+minishell> ^C
+minishell> 
+
+# Ctrl+D to exit
+minishell> [Press Ctrl+D]
+$
+10. Memory Leak Test
+If you're on Linux with valgrind:
+Bash
+$ valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./minishell
+minishell> echo $USER
+malmarzo
+minishell> echo $?
+0
+minishell> cat < test1.txt < test2.txt < test3.txt
+Test 3
+minishell> echo "test" | cat | cat
+test
+minishell> exit
+
+# Check valgrind output - should show:
+# "All heap blocks were freed -- no leaks are possible"
+# Or minimal leaks from readline library (which is acceptable)
+11. Performance Test
+Bash
+# Test with many redirections
+minishell> cat < test1.txt < test2.txt < test3.txt < test1.txt < test2.txt
+Test 2
+
+# Long pipeline
+minishell> echo "test" | cat | cat | cat | cat | cat | cat | cat | cat
+test
+
+# Many variables
+minishell> export A=1 B=2 C=3 D=4 E=5
+minishell> echo $A $B $C $D $E
+1 2 3 4 5
+12. Error Handling
+Bash
 # Command not found
 minishell> nonexistent_command
 minishell: nonexistent_command: command not found
 minishell> echo $?
 127
 
-# Empty variable
-minishell> echo $NONEXISTENT
-
-minishell> echo "Value: $NONEXISTENT end"
-Value:  end
-11. Signals
-Bash
-# Ctrl+C (should not exit, just new prompt)
-minishell> sleep 10
-^C
+# Permission denied (if you have a file without execute permission)
+minishell> ./no_execute_permission_file
+minishell: ./no_execute_permission_file: Permission denied
 minishell> echo $?
-130
+126
 
-# Ctrl+D (should exit gracefully)
-minishell> [Ctrl+D]
-$
-
-# Ctrl+\ (should be ignored in interactive mode)
-minishell> ^\
-minishell>
-12. Heredoc
-Bash
-# Basic heredoc
-minishell> cat << EOF
-> line 1
-> line 2
-> line 3
-> EOF
-line 1
-line 2
-line 3
-
-# Heredoc with variable expansion
-minishell> cat << EOF
-> Hello $USER
-> Your home is $HOME
-> EOF
-Hello malmarzo
-Your home is /Users/malmarzo
-13. Stress Test (Memory Leaks)
-Bash
-# Run these multiple times to check for memory leaks
-minishell> cat < file1.txt < file2.txt < file3.txt
-minishell> cat < file1.txt < file2.txt < file3.txt
-minishell> cat < file1.txt < file2.txt < file3.txt
-
-# Test with valgrind (if on Linux)
-$ valgrind --leak-check=full --show-leak-kinds=all ./minishell
-minishell> cat < file1.txt < file2.txt < file3.txt
-minishell> exit
-# Should show no leaks from your code
-14. Exit Status
-Bash
-# Test exit codes
-minishell> ls
+# Incomplete redirections (should NOT crash)
+minishell> echo test >
+minishell: syntax error near unexpected token `newline'
 minishell> echo $?
-0
+2
 
-minishell> ls /nonexistent
-ls: /nonexistent: No such file or directory
-minishell> echo $?
-1
+minishell> cat <
+minishell: syntax error near unexpected token `newline'
+🎯 Summary of What's Fixed
+✅ Bug #1: Parser segfault on incomplete redirections - FIXED
 
-minishell> exit 42
-$ echo $?
-42
-15. Complex Scenarios
-Bash
-# Combination of features
-minishell> export NAME="John"
-minishell> echo "Hello $NAME" | cat > greeting.txt
-minishell> cat < greeting.txt | cat | cat
-Hello John
+✅ Bug #2: Buffer overflow in variable expansion - FIXED
 
-# Multiple commands
-minishell> echo "test1" > file.txt
-minishell> cat file.txt
-test1
-minishell> echo "test2" >> file.txt
-minishell> cat file.txt
-test1
-test2
-📊 Expected Results Summary
-Test
-Expected Behavior
-Incomplete redirections
-Error message, no crash
-Multiple redirections
-Last redirection wins, no memory leak
-Large variables
-No buffer overflow, correct output
-SHLVL
-Increments with each nested shell
-Pipes
-Correct data flow between commands
-Signals
-Ctrl+C shows new prompt, Ctrl+D exits
-Exit status
-Correctly stored in $?
-🐛 What to Look For
-No segfaults - Shell should never crash
-No memory leaks - Run with valgrind to verify
-Correct output - Compare with bash behavior
-Proper cleanup - All file descriptors closed, memory freed
+✅ Bug #3: Memory leak in redirection parsing - FIXED
+
+✅ SHLVL: Correctly increments with nested shells - WORKING
+
+✅ Variable expansion: $? and $VAR work correctly - WORKING
+
+✅ Redirections: Multiple redirections handled properly - WORKING
+📝 Next Steps (Optional Improvements)
+If you want to make your minishell even better, consider:
+Heredoc with variable expansion (if delimiter is unquoted)
+Wildcards (* expansion)
+Logical operators (&& and ||)
+Subshells ((command))
+Better error messages (more descriptive)
