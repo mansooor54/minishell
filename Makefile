@@ -27,11 +27,19 @@ LIBFT = $(LIBFT_DIR)/libft.a
 # Source files
 SRC_DIR = src
 SRCS = main.c \
-       $(SRC_DIR)/lexer/lexer.c \
-       $(SRC_DIR)/lexer/lexer_utils.c \
-       $(SRC_DIR)/lexer/lexer_operator.c \
-       $(SRC_DIR)/parser/parser.c \
-       $(SRC_DIR)/parser/parser_pipeline.c \
+       $(SRC_DIR)/builtins/builtins.c \
+       $(SRC_DIR)/builtins/builtin_echo.c \
+       $(SRC_DIR)/builtins/builtin_cd.c \
+       $(SRC_DIR)/builtins/builtin_cd_utils.c \
+       $(SRC_DIR)/builtins/builtin_pwd.c \
+       $(SRC_DIR)/builtins/builtin_env.c \
+       $(SRC_DIR)/builtins/builtin_export.c \
+       $(SRC_DIR)/builtins/builtin_unset.c \
+       $(SRC_DIR)/builtins/builtin_exit.c \
+       $(SRC_DIR)/core/globals.c \
+       $(SRC_DIR)/core/init.c \
+       $(SRC_DIR)/core/loop.c \
+       $(SRC_DIR)/env/env_array.c \
        $(SRC_DIR)/expander/expander_pipeline.c \
        $(SRC_DIR)/expander/expander_utils.c \
        $(SRC_DIR)/expander/expander.c \
@@ -44,19 +52,16 @@ SRCS = main.c \
        $(SRC_DIR)/executor/executor_pipeline_utils.c \
        $(SRC_DIR)/executor/executor_pipeline.c \
        $(SRC_DIR)/executor/executor_redirections.c \
-       $(SRC_DIR)/builtins/builtins.c \
-       $(SRC_DIR)/builtins/builtin_echo.c \
-       $(SRC_DIR)/builtins/builtin_cd.c \
-       $(SRC_DIR)/builtins/builtin_cd_utils.c \
-       $(SRC_DIR)/builtins/builtin_pwd.c \
-       $(SRC_DIR)/builtins/builtin_env.c \
-       $(SRC_DIR)/builtins/builtin_export.c \
-       $(SRC_DIR)/builtins/builtin_unset.c \
-       $(SRC_DIR)/builtins/builtin_exit.c \
+       $(SRC_DIR)/lexer/lexer.c \
+       $(SRC_DIR)/lexer/lexer_utils.c \
+       $(SRC_DIR)/lexer/lexer_operator.c \
+       $(SRC_DIR)/parser/parser.c \
+       $(SRC_DIR)/parser/parser_pipeline.c \
        $(SRC_DIR)/utils/environment.c \
        $(SRC_DIR)/utils/environment_utils.c \
        $(SRC_DIR)/utils/utils.c \
-       $(SRC_DIR)/signals/signals.c
+       $(SRC_DIR)/signals/signals.c \
+       minishell_logo.c
 
 # Object files
 OBJ_DIR = obj

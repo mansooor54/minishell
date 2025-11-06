@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   globals.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -17,37 +17,4 @@
 ** This is the only global variable used, as required by the subject
 ** It allows signal handlers to access and modify shell state
 */
-extern t_shell	g_shell;
-
-/*
-** main - Entry point of the minishell program
-**
-** This function:
-** 1. Initializes the global shell structure with environment variables
-** 2. Sets up signal handlers for:
-		 Ctrl-C, Ctrl-D, and Ctrl-\
-** 3. Runs the main shell loop
-** 4. Cleans up allocated memory before exiting
-** 5. Returns the last exit status
-**
-** The argc and argv parameters are unused but required by the standard
-** main function signature.
-**
-** @param argc: Argument count (unused)
-** @param argv: Argument vector (unused)
-** @param envp: Environment variables array
-**
-** Return: Exit status of the last executed command
-*/
-int	main(int argc, char **argv, char **envp)
-{
-	(void)argc;
-	(void)argv;
-	write(1, "\033[2J\033[H", 7);
-	print_logo();
-	init_shell(&g_shell, envp);
-	setup_signals();
-	shell_loop(&g_shell);
-	free_env(g_shell.env);
-	return (g_shell.exit_status);
-}
+t_shell	g_shell;

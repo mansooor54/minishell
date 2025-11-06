@@ -115,7 +115,6 @@ typedef struct s_shell
 ** Required to access shell state from signal handlers
 ** This is the only global variable allowed by the subject
 */
-extern t_shell	g_shell;
 
 typedef struct s_child_io
 {
@@ -131,6 +130,8 @@ typedef struct s_pipe_ctx
 	pid_t		*pids;
 	int			*prev_rd;
 }	t_pipe_ctx;
+
+extern t_shell	g_shell;
 
 /* ========== LEXER ========== */
 /*
@@ -215,10 +216,8 @@ void		expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status);
 void		expand_redirections(t_redir *redir, t_env *env, int exit_status);
 void		expand_pipeline_cmds(t_cmd *cmds, t_env *env, int exit_status);
 char		**env_to_array(t_env *env);
-void		free_strv(char **v);   // helper to free NULL-terminated vector
+void		free_strv(char **v);
 char		*join_cmd_path(char *dir, char *cmd);
-
-/* Quote removal */
 char		*remove_quotes(char *str);
 
 /* ========== EXECUTOR ========== */
@@ -243,9 +242,6 @@ void		execute_command(t_cmd *cmd, t_shell *shell);
 /* Setup redirections for a command */
 int			setup_redirections(t_redir *redirs);
 int			setup_child_fds(int pipefd[2], int prev_read_fd, int has_next);
-
-
-/* Find executable in PATH or return absolute/relative path */
 char		*find_executable(char *cmd, t_env *env);
 void		print_error(const char *function, const char *message);
 void		safe_close(int fd);
@@ -358,5 +354,15 @@ char		*ft_strjoin_free(char *s1, char const *s2);
 
 /* ========== Lexer ========== */
 t_token		*get_operator_token(char **input);
+
+/*===== Print Minishell Logo =====*/
+void		print_logo(void);
+
+/* core */
+void		init_shell(t_shell *shell, char **envp);
+void		shell_loop(t_shell *shell);
+
+/* env array */
+int			append_env(char ***arr, size_t *n, const char *k, const char *v);
 
 #endif

@@ -103,6 +103,16 @@ As specified in the subject:
 - strerror, perror, isatty, ttyname, ttyslot, ioctl, getenv
 - tcsetattr, tcgetattr, tgetent, tgetflag, tgetnum, tgetstr, tgoto, tputs
 
+# Testing Results - All Passed!
+```bash
+✓ Basic commands (ls, pwd, echo)
+✓ Built-in commands (cd, export, env, exit)
+✓ Pipes (ls | grep Make)
+✓ Redirections (echo test > file.txt)
+✓ Environment variables ($TEST expansion)
+✓ Directory navigation (cd -, cd /tmp)
+```
+
 ## Usage Examples
 
 ```bash
