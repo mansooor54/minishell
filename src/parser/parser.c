@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/06 14:16:03 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,39 +30,32 @@ static t_redir	*create_redir(t_token_type type, char *file)
 }
 
 /*
-** Parse redirections from token stream
-** Extracts all redirection operators and their target files
+** parse_single_redirection - Parse a single redirection from token stream
+**
+** Extracts one redirection operator and its target file.
+** Returns NULL if no redirection found or syntax error.
 */
-t_redir	*parse_redirections(t_token **tokens)
+static t_redir	*parse_single_redirection(t_token **tokens)
 {
-	t_redir	*redirs;
-	t_redir	*new_redir;
-	t_redir	*current;
+	t_redir	*redir;
 
-	redirs = NULL;
-	while (*tokens && ((*tokens)->type == TOKEN_REDIR_IN
-			|| (*tokens)->type == TOKEN_REDIR_OUT
-			|| (*tokens)->type == TOKEN_REDIR_APPEND
-			|| (*tokens)->type == TOKEN_REDIR_HEREDOC))
+	if (!*tokens)
+		return (NULL);
+	if ((*tokens)->type != TOKEN_REDIR_IN
+		&& (*tokens)->type != TOKEN_REDIR_OUT
+		&& (*tokens)->type != TOKEN_REDIR_APPEND
+		&& (*tokens)->type != TOKEN_REDIR_HEREDOC)
+		return (NULL);
+	if (!(*tokens)->next || !(*tokens)->next->value)
 	{
-		if (!(*tokens)->next || !(*tokens)->next->value)
-		{
-			// Print error: syntax error near unexpected token
-			return (NULL);
-		}
-		new_redir = create_redir((*tokens)->type, (*tokens)->next->value);
-		if (!redirs)
-			redirs = new_redir;
-		else
-		{
-			current = redirs;
-			while (current->next)
-				current = current->next;
-			current->next = new_redir;
-		}
-		*tokens = (*tokens)->next->next;
+		ft_putendl_fd("minishell: syntax error near unexpected token `newline'", 2);
+		return (NULL);
 	}
-	return (redirs);
+	redir = create_redir((*tokens)->type, (*tokens)->next->value);
+	if (!redir)
+		return (NULL);
+	*tokens = (*tokens)->next->next;
+	return (redir);
 }
 
 /*
@@ -82,7 +75,11 @@ static int	count_args(t_token *tokens)
 				|| tokens->type == TOKEN_REDIR_OUT
 				|| tokens->type == TOKEN_REDIR_APPEND
 				|| tokens->type == TOKEN_REDIR_HEREDOC))
+		{
+			if (!tokens->next)
+				return (count);
 			tokens = tokens->next->next;
+		}
 	}
 	return (count);
 }
@@ -90,10 +87,12 @@ static int	count_args(t_token *tokens)
 /*
 ** Parse a single command with its arguments and redirections
 ** Builds a command structure from tokens until pipe or end
+** Now correctly accumulates all redirections instead of overwriting
 */
 t_cmd	*parse_command(t_token **tokens)
 {
 	t_cmd	*cmd;
+	t_redir	*new_redir;
 	int		i;
 	int		arg_count;
 
@@ -102,12 +101,23 @@ t_cmd	*parse_command(t_token **tokens)
 		return (NULL);
 	arg_count = count_args(*tokens);
 	cmd->args = malloc(sizeof(char *) * (arg_count + 1));
+	cmd->redirs = NULL;
 	i = 0;
 	while (*tokens && (*tokens)->type == TOKEN_WORD)
 	{
 		cmd->args[i++] = ft_strdup((*tokens)->value);
 		*tokens = (*tokens)->next;
-		cmd->redirs = parse_redirections(tokens);
+		while (*tokens && ((*tokens)->type == TOKEN_REDIR_IN
+				|| (*tokens)->type == TOKEN_REDIR_OUT
+				|| (*tokens)->type == TOKEN_REDIR_APPEND
+				|| (*tokens)->type == TOKEN_REDIR_HEREDOC))
+		{
+			new_redir = parse_single_redirection(tokens);
+			if (new_redir)
+				append_redir(&cmd->redirs, new_redir);
+			else
+				break ;
+		}
 	}
 	cmd->args[i] = NULL;
 	cmd->next = NULL;

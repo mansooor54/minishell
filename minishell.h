@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/05 16:04:09 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/06 15:05:03 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 # include <errno.h>
 # include <readline/readline.h>
 # include <readline/history.h>
+# include <math.h>
 # include "libft/libft.h"
 
 /*
@@ -133,10 +134,33 @@ typedef struct s_pipe_ctx
 
 extern t_shell	g_shell;
 
-/* ========== LEXER ========== */
 /*
-** Tokenize input string into a linked list of tokens
+** Structure to hold expansion context
+** Used to avoid passing too many arguments (>4) to functions
 */
+typedef struct s_exp_ctx
+{
+	char	*str;
+	char	*result;
+	int		*i;
+	int		*j;
+	char	in_quote;
+	t_env	*env;
+	int		exit_status;
+}	t_exp_ctx;
+
+typedef struct s_quote_ctx
+{
+	int		i;
+	int		j;
+	char	quote;
+	char	*str;
+	char	*res;
+}	t_quote_ctx;
+
+
+/* ========== LEXER ========== */
+/* zokenize input string into a linked list of tokens */
 t_token		*lexer(char *input);
 
 /*
@@ -155,51 +179,21 @@ void		add_token(t_token **tokens, t_token *new_token);
 void		free_tokens(t_token *tokens);
 
 /* ========== PARSER ========== */
-/*
-** Parse tokens into a pipeline structure
-*/
+/* Parse tokens into a pipeline structure */
 t_pipeline	*parser(t_token *tokens);
 
-/*
-** Parse a single command from tokens
-*/
+/* Parse a single command from tokens */
 t_cmd		*parse_command(t_token **tokens);
 
-/*
-** Parse redirections for a command
-*/
+/* Parse redirections for a command */
 t_redir		*parse_redirections(t_token **tokens);
 
-/*
-** Free entire pipeline structure
-*/
+/* Free entire pipeline structure */
 void		free_pipeline(t_pipeline *pipeline);
+size_t		calculate_expansion_size(char *str, t_env *env, int exit_status);
+void		append_redir(t_redir **head, t_redir *new_redir);
 
 /* ========== EXPANDER ========== */
-/* Main expander functions */
-/*
-** Structure to hold expansion context
-** Used to avoid passing too many arguments (>4) to functions
-*/
-typedef struct s_exp_ctx
-{
-	char	*str;
-	char	*result;
-	int		*i;
-	int		*j;
-	t_env	*env;
-	int		exit_status;
-}	t_exp_ctx;
-
-typedef struct s_quote_ctx
-{
-	int		i;
-	int		j;
-	char	quote;
-	char	*str;
-	char	*res;
-}	t_quote_ctx;
-
 /* Main expander functions */
 char		*get_env_value(t_env *env, char *key);
 char		*expand_variables(char *str, t_env *env, int exit_status);
@@ -219,6 +213,7 @@ char		**env_to_array(t_env *env);
 void		free_strv(char **v);
 char		*join_cmd_path(char *dir, char *cmd);
 char		*remove_quotes(char *str);
+void		update_quote_state(char *str, int i, char *in_quote);
 
 /* ========== EXECUTOR ========== */
 /*
@@ -299,6 +294,7 @@ int			builtin_exit(char **args, t_shell *shell);
 ** Initialize environment from envp array
 */
 t_env		*init_env(char **envp);
+void		increment_shlvl(t_env **env);  /* ADD THIS LINE */
 
 /*
 ** Create a new environment node
@@ -364,5 +360,6 @@ void		shell_loop(t_shell *shell);
 
 /* env array */
 int			append_env(char ***arr, size_t *n, const char *k, const char *v);
+void		parse_env_string(char *env_str, char **key, char **value);
 
 #endif

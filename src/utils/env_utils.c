@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/06 15:04:12 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 ** Parse environment string (KEY=VALUE)
 ** Splits at '=' and returns key and value
 */
-static void	parse_env_string(char *env_str, char **key, char **value)
+void	parse_env_string(char *env_str, char **key, char **value)
 {
 	char	*eq;
 
@@ -31,32 +31,6 @@ static void	parse_env_string(char *env_str, char **key, char **value)
 		*key = ft_strdup(env_str);
 		*value = NULL;
 	}
-}
-
-/*
-** Initialize environment from envp array
-** Creates linked list of environment variables
-*/
-t_env	*init_env(char **envp)
-{
-	t_env	*env;
-	t_env	*new_node;
-	char	*key;
-	char	*value;
-	int		i;
-
-	env = NULL;
-	i = 0;
-	while (envp[i])
-	{
-		parse_env_string(envp[i], &key, &value);
-		new_node = create_env_node(key, value);
-		add_env_node(&env, new_node);
-		free(key);
-		free(value);
-		i++;
-	}
-	return (env);
 }
 
 /*

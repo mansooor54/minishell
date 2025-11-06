@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/06 15:06:08 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,4 +42,22 @@ char	*ft_strjoin_free(char *s1, char const *s2)
 	result = ft_strjoin(s1, s2);
 	free(s1);
 	return (result);
+}
+
+/*
+** Free all environment variables
+** Frees keys, values, and nodes
+*/
+void	free_env(t_env *env)
+{
+	t_env	*tmp;
+
+	while (env)
+	{
+		tmp = env;
+		env = env->next;
+		free(tmp->key);
+		free(tmp->value);
+		free(tmp);
+	}
 }

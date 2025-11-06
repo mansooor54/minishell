@@ -6,7 +6,7 @@
 #    By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#              #
-#    Updated: 2025/11/05 16:06:29 by malmarzo         ###   ########.fr        #
+#    Updated: 2025/11/06 15:05:47 by malmarzo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -36,10 +36,8 @@ SRCS = main.c \
        $(SRC_DIR)/builtins/builtin_export.c \
        $(SRC_DIR)/builtins/builtin_unset.c \
        $(SRC_DIR)/builtins/builtin_exit.c \
-       $(SRC_DIR)/core/globals.c \
-       $(SRC_DIR)/core/init.c \
-       $(SRC_DIR)/core/loop.c \
-       $(SRC_DIR)/env/env_array.c \
+       $(SRC_DIR)/environment/env_array.c \
+       $(SRC_DIR)/environment/env.c \
        $(SRC_DIR)/expander/expander_pipeline.c \
        $(SRC_DIR)/expander/expander_utils.c \
        $(SRC_DIR)/expander/expander.c \
@@ -56,9 +54,10 @@ SRCS = main.c \
        $(SRC_DIR)/lexer/lexer_utils.c \
        $(SRC_DIR)/lexer/lexer_operator.c \
        $(SRC_DIR)/parser/parser.c \
+       $(SRC_DIR)/parser/parser_utils.c \
        $(SRC_DIR)/parser/parser_pipeline.c \
-       $(SRC_DIR)/utils/environment.c \
-       $(SRC_DIR)/utils/environment_utils.c \
+       $(SRC_DIR)/utils/env_node.c \
+       $(SRC_DIR)/utils/env_utils.c \
        $(SRC_DIR)/utils/utils.c \
        $(SRC_DIR)/signals/signals.c \
        minishell_logo.c

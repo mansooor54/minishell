@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/04 15:10:00 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/06 15:26:29 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,10 +102,16 @@ char	*remove_quotes(char *str)
 void	expand_exit_status(char *result, int *j, int exit_status)
 {
 	char	*tmp;
+	int		len;
 
+	if (!result || !j)
+		return ;
 	tmp = ft_itoa(exit_status);
+	if (!tmp)
+		return ;
+	len = ft_strlen(tmp);
 	ft_strcpy(&result[*j], tmp);
-	*j += ft_strlen(tmp);
+	*j += len;
 	free(tmp);
 }
 
@@ -113,13 +119,9 @@ void	expand_exit_status(char *result, int *j, int exit_status)
 ** expand_var_name - Expand environment variable by name
 **
 ** Extracts variable name from input string and replaces it with its value
-** from the environment.
+** from the environment. Now includes bounds checking.
 **
-** @param str: Source string
-** @param result: Destination buffer
-** @param i: Pointer to source index
-** @param j: Pointer to destination index
-** @param env: Environment linked list
+** @param ctx: Expansion context structure
 **
 ** Return: void
 */
@@ -129,11 +131,16 @@ void	expand_var_name(t_exp_ctx *ctx)
 	char	*var_value;
 	int		k;
 
+	if (!ctx || !ctx->str || !ctx->i || !ctx->j || !ctx->result)
+		return ;
 	k = 0;
 	while (ctx->str[*(ctx->i)] && (ft_isalnum(ctx->str[*(ctx->i)])
-			|| ctx->str[*(ctx->i)] == '_'))
+			|| ctx->str[*(ctx->i)] == '_') && k < 255)
 		var_name[k++] = ctx->str[(*(ctx->i))++];
 	var_name[k] = '\0';
+	while (ctx->str[*(ctx->i)] && (ft_isalnum(ctx->str[*(ctx->i)])
+			|| ctx->str[*(ctx->i)] == '_'))
+		(*(ctx->i))++;
 	var_value = get_env_value(ctx->env, var_name);
 	if (var_value)
 	{
