@@ -75,8 +75,6 @@ t_env	*init_env(char **envp)
 	return (env);
 }
 
-
-
 void	init_shell(t_shell *shell, char **envp)
 {
 	shell->env = init_env(envp);

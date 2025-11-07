@@ -16,29 +16,84 @@
 ** Check if string is a valid number
 ** Returns 1 if numeric, 0 otherwise
 */
+// static int	is_numeric_ll(const char *s, long long *out)
+// {
+// 	int			sign;
+// 	long long	val;
+// 	int			i;
+
+// 	if (!s || !*s)
+// 		return (0);
+// 	i = 0;
+// 	sign = 1;
+// 	if (s[i] == '+' || s[i] == '-')
+// 	{
+// 		if (s[i] == '-')
+// 			sign = -1;
+// 		i++;
+// 	}
+// 	if (!ft_isdigit((unsigned char)s[i]))
+// 		return (0);
+// 	val = 0;
+// 	while (ft_isdigit((unsigned char)s[i]))
+// 	{
+// 		val = val * 10 + (s[i] - '0');
+// 		i++;
+// 	}
+// 	if (s[i] != '\0')
+// 		return (0);
+// 	*out = val * sign;
+// 	return (1);
+// }
+
+/* ≤25 lines */
+static int	parse_sign(const char *s, int *i)
+{
+	int	sign;
+
+	sign = 1;
+	if (s[*i] == '+' || s[*i] == '-')
+	{
+		if (s[*i] == '-')
+			sign = -1;
+		(*i)++;
+	}
+	return (sign);
+}
+
+/* ≤25 lines */
+static int	parse_digits(const char *s, int *i, long long *val)
+{
+	long long	v;
+	int			j;
+
+	j = *i;
+	if (!ft_isdigit((unsigned char)s[j]))
+		return (0);
+	v = 0;
+	while (ft_isdigit((unsigned char)s[j]))
+	{
+		v = v * 10 + (s[j] - '0');
+		j++;
+	}
+	*i = j;
+	*val = v;
+	return (1);
+}
+
+/* ≤25 lines */
 static int	is_numeric_ll(const char *s, long long *out)
 {
-	int			sign;
 	long long	val;
+	int			sign;
 	int			i;
 
 	if (!s || !*s)
 		return (0);
 	i = 0;
-	sign = 1;
-	if (s[i] == '+' || s[i] == '-')
-	{
-		if (s[i] == '-') sign = -1;
-		i++;
-	}
-	if (!ft_isdigit((unsigned char)s[i]))
+	sign = parse_sign(s, &i);
+	if (!parse_digits(s, &i, &val))
 		return (0);
-	val = 0;
-	while (ft_isdigit((unsigned char)s[i]))
-	{
-		val = val * 10 + (s[i] - '0');
-		i++;
-	}
 	if (s[i] != '\0')
 		return (0);
 	*out = val * sign;

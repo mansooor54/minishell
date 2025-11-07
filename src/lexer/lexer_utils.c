@@ -12,18 +12,11 @@
 
 #include "../../minishell.h"
 
-/*
-** Check if character is a whitespace (space or tab)
-*/
 static int	is_whitespace(char c)
 {
 	return (c == ' ' || c == '\t');
 }
 
-/*
-** Check if character is a special operator character
-** Returns 1 for |, <, >, &
-*/
 static int	is_operator(char c)
 {
 	return (c == '|' || c == '<' || c == '>' || c == '&');
@@ -33,27 +26,49 @@ static int	is_operator(char c)
 ** Extract a word token from input, handling quotes
 ** Returns the length of the word extracted
 */
+/* returns length consumed, writes raw slice (quotes/backslashes kept) */
 static int	extract_word(char *input, char **word)
 {
 	int		i;
-	int		in_quote;
-	char	quote_char;
+	int		in_quote;     /* 0 or '\'' or '"' */
 
 	i = 0;
 	in_quote = 0;
 	while (input[i] && (in_quote || (!is_whitespace(input[i])
 				&& !is_operator(input[i]))))
 	{
+		/* enter quote if not already in quotes and we see a quote */
 		if (!in_quote && (input[i] == '\'' || input[i] == '"'))
 		{
-			quote_char = input[i];
-			in_quote = 1;
+			in_quote = input[i++];      /* track we’re inside quotes */
+			continue ;
 		}
-		else if (in_quote && input[i] == quote_char)
-			in_quote = 0;
+
+		/* leave quotes:
+		   - single quotes: never escaped → close on matching '
+		   - double quotes: close on " only if previous char is NOT a backslash
+		*/
+		if (in_quote)
+		{
+			if (input[i] == in_quote)
+			{
+				if (in_quote == '"' && i > 0 && input[i - 1] == '\\')
+				{
+					/* \" does NOT close; keep both chars for remove_quotes */
+					i++;
+					continue ;
+				}
+				in_quote = 0;
+				i++;
+				continue ;
+			}
+			i++;
+			continue ;
+		}
+		/* outside quotes: backslash stays; handled later */
 		i++;
 	}
-	*word = malloc(i + 1);
+	*word = malloc((size_t)i + 1);
 	if (!*word)
 		return (0);
 	ft_strncpy(*word, input, i);

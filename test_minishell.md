@@ -1,5 +1,17 @@
 ✅ Final Comprehensive Test Suite
 Now that the basic tests work, let's test more advanced scenarios:
+
+```bash
+# Test qoute
+echo "A\"B"            # A"B
+echo "x\"\"y"          # x""y
+echo "keep \\ back"    # keep \ back
+echo "\$HOME"          # $HOME
+echo "$HOME"           # expands
+echo '$HOME'           # $HOME
+echo 'A'\''B'          # A'B
+echo "Test Hello"\n "hello"   # Test Hellon hello
+
 1. Complex Variable Expansion
 Bash
 minishell> export VAR1="Hello"
@@ -81,7 +93,7 @@ minishell> cat out3.txt
 Final
 minishell> cat out1.txt 2>/dev/null || echo "out1.txt doesn't exist (correct)"
 out1.txt doesn't exist (correct)
-
+```
 # Append redirections
 minishell> echo "Line 1" > append.txt
 minishell> echo "Line 2" >> append.txt

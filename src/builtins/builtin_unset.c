@@ -14,7 +14,7 @@
 
 static int	valid_ident_unset(char *s)
 {
-	int i;
+	int	i;
 
 	if (!s || !(ft_isalpha((unsigned char)s[0]) || s[0] == '_'))
 		return (0);

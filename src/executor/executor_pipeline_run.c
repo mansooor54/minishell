@@ -98,11 +98,10 @@ int	execute_single_builtin_parent(t_cmd *cmd, t_shell *shell)
 		return (-1);
 	if (cmd->redirs != NULL)
 		return (-1);
-
 	if (!cmd->expanded)
 	{
 		expand_cmd_args(cmd, shell->env, shell->exit_status);
-    	cmd->expanded = 1;
+		cmd->expanded = 1;
 	}
 	return (execute_builtin(cmd, shell));
 }

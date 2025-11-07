@@ -13,7 +13,7 @@
 #include "../../minishell.h"
 
 /*
-** Duplicate current working directory
+** Dup_cwd: Duplicate current working directory
 ** Returns heap-allocated string with current directory or NULL on failure
 */
 char	*dup_cwd(void)
@@ -31,31 +31,28 @@ char	*dup_cwd(void)
 ** Sets print_after flag for "-" case
 ** Returns heap-allocated target path or NULL on error
 */
+static char	*dup_env_or_err(t_env *env, const char *key, const char *errmsg)
+{
+	char	*v;
+
+	v = get_env_value(env, (char *)key);
+	if (!v)
+	{
+		ft_putendl_fd((char *)errmsg, 2);
+		return (NULL);
+	}
+	return (ft_strdup(v));
+}
+
 char	*resolve_target(char **args, t_env *env, int *print_after)
 {
-	char	*target;
-
 	*print_after = 0;
 	if (!args[1])
-	{
-		target = get_env_value(env, "HOME");
-		if (!target)
-		{
-			ft_putendl_fd("minishell: cd: HOME not set", 2);
-			return (NULL);
-		}
-		return (ft_strdup(target));
-	}
+		return (dup_env_or_err(env, "HOME", "minishell: cd: HOME not set"));
 	if (ft_strcmp(args[1], "-") == 0)
 	{
-		target = get_env_value(env, "OLDPWD");
-		if (!target)
-		{
-			ft_putendl_fd("minishell: cd: OLDPWD not set", 2);
-			return (NULL);
-		}
 		*print_after = 1;
-		return (ft_strdup(target));
+		return (dup_env_or_err(env, "OLDPWD", "minishell: cd: OLDPWD not set"));
 	}
 	return (ft_strdup(args[1]));
 }

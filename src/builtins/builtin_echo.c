@@ -19,7 +19,7 @@
 */
 static int	is_dash_n(char *s)
 {
-	int i;
+	int	i;
 
 	if (!s || s[0] != '-' || s[1] != 'n')
 		return (0);

@@ -110,8 +110,8 @@ typedef struct s_exp_ctx
 {
 	char	*str;
 	char	*result;
-	int		*i;
-	int		*j;
+	int		i;
+	int		j;
 	char	in_quote;
 	t_env	*env;
 	int		exit_status;
@@ -148,7 +148,7 @@ char		*expand_variables(char *str, t_env *env, int exit_status);
 void		expander(t_pipeline *pipeline, t_env *env);
 void		expand_exit_status(char *result, int *j, int exit_status);
 void		expand_var_name(t_exp_ctx *ctx);
-void		process_dollar(t_exp_ctx *ctx);
+void		process_dollar(t_exp_ctx *c);
 void		expand_arg(char **arg, t_env *env, int exit_status);
 void		expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status);
 void		expand_redirections(t_redir *redir, t_env *env, int exit_status);
