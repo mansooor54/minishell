@@ -23,7 +23,7 @@
 #define ERR_REDIR_HEREDOC "minishell: syntax error near unexpected token `<<'"
 #define ERR_MULTIPLE_REDIR "minishell: syntax error near unexpected token `<<<'"
 #define ERR_CONSECUTIVE_REDIR \
-	"minishell: syntax error near unexpected token `<'"
+	"minishell: syntax error near unexpected token `>'"
 
 /* Token validation functions */
 int	is_valid_word(t_token *token)
@@ -46,32 +46,74 @@ int	is_redirection(t_token *token)
 			|| token->type == TOKEN_REDIR_HEREDOC));
 }
 
-/* Add function to count consecutive redirections */
-static int	count_consecutive_redirections(t_token *token)
+/* helpers */
+static int	is_gt(t_token *t)
 {
-	int	count;
-
-	count = 0;
-	while (token && is_redirection(token))
-	{
-		count++;
-		token = token->next;
-	}
-	return (count);
+	return (t && (t->type == TOKEN_REDIR_OUT || t->type == TOKEN_REDIR_APPEND));
 }
 
-/* Update print_syntax_error function */
+static int	is_lt(t_token *t)
+{
+	return (t && (t->type == TOKEN_REDIR_IN || t->type == TOKEN_REDIR_HEREDOC));
+}
+
+static int	tok_op_len(t_token *t)
+{
+	if (!t)
+		return (0);
+	if (t->type == TOKEN_REDIR_APPEND || t->type == TOKEN_REDIR_HEREDOC)
+		return (2); /* ">>" or "<<" */
+	if (t->type == TOKEN_REDIR_OUT || t->type == TOKEN_REDIR_IN)
+		return (1); /* ">" or "<" */
+	return (0);
+}
+
+/* choose correct unexpected token for runs like >>>> or <<<< */
+static void	print_run_error(t_token *t)
+{
+	int			total;
+	t_token		*cur;
+
+	total = 0;
+	cur = t;
+	if (is_gt(t))
+	{
+		while (is_gt(cur))
+		{
+			total += tok_op_len(cur);
+			cur = cur->next;
+		}
+		if (total > 3)
+			ft_putendl_fd(ERR_REDIR_APPEND, 2); /* >>>, >>>> → `>>' */
+		else if (total == 2 && (!cur || is_control_operator(cur) || is_redirection(cur)))
+			ft_putendl_fd(ERR_NEWLINE, 2);      /* >> + EOF/op → `newline' */
+		else
+			ft_putendl_fd(ERR_CONSECUTIVE_REDIR, 2); /* > followed by redir → `>' */
+		return ;
+	}
+	if (is_lt(t))
+	{
+		while (is_lt(cur))
+		{
+			total += tok_op_len(cur);
+			cur = cur->next;
+		}
+		if (total > 3)
+			ft_putendl_fd(ERR_REDIR_IN, 2); /* <<<, <<<< → `<<' */
+		else if (total < 4 && (!cur || is_control_operator(cur) || is_redirection(cur)))
+			ft_putendl_fd(ERR_NEWLINE, 2);        /* << + EOF/op → `newline' */
+		else
+			ft_putendl_fd(ERR_REDIR_IN, 2);       /* < followed by redir → `<' */
+	}
+}
+
+/* replace your redir branch with this */
 void	print_syntax_error(t_token *token)
 {
 	if (!token)
 		ft_putendl_fd(ERR_NEWLINE, 2);
 	else if (is_redirection(token) && is_redirection(token->next))
-	{
-		if (count_consecutive_redirections(token) > 2)
-			ft_putendl_fd(ERR_MULTIPLE_REDIR, 2);
-		else
-			ft_putendl_fd(ERR_CONSECUTIVE_REDIR, 2);
-	}
+		print_run_error(token);
 	else if (token->type == TOKEN_PIPE)
 		ft_putendl_fd(ERR_PIPE, 2);
 	else if (token->type == TOKEN_AND)
