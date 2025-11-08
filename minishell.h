@@ -218,16 +218,17 @@ void		handle_sigquit(int sig);
 void		free_array(char **arr);
 char		*ft_strjoin_free(char *s1, char const *s2);
 void		print_logo(void);
+char		*read_joined_line(t_shell *shell);
 
 /* ===================== CORE ===================== */
 void		init_shell(t_shell *shell, char **envp);
 void		shell_loop(t_shell *shell);
+char		*read_logical_line(void);
 
 /* history */
 int			history_init(t_env *env);
 void		history_add_line(const char *line);
 void		history_save(void);
 int			builtin_history(char **args);
-
 
 #endif

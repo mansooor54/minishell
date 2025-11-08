@@ -64,7 +64,8 @@ void	shell_loop(t_shell *shell)
 
 	while (!shell->should_exit)
 	{
-		line = readline("\033[1;33mminishell> \033[0m");
+		//line = readline("\033[1;33mminishell> \033[0m");
+		line = read_logical_line();
 		if (!line)
 		{
 			ft_putendl_fd("exit", 1);

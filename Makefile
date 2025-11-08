@@ -68,6 +68,7 @@ SRCS = minishell.c \
        $(SRC_DIR)/signals/signals.c \
        $(SRC_DIR)/history/history.c \
        $(SRC_DIR)/history/builtin_history.c \
+       $(SRC_DIR)/core/reader.c \
        minishell_logo.c
 
 # Object files
