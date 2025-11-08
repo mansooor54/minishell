@@ -16,14 +16,14 @@
 
 static int	enter_quote(char *s, size_t *i, char *in_quote, int *escaped)
 {
-	if (!*in_quote && (s[*i] == '\'' || s[*i] == '"'))
-	{
-		*in_quote = s[*i];
-		(*i)++;
-		*escaped = 0;
-		return (1);
-	}
-	return (0);
+	if (*in_quote)
+		return (0);
+	if (s[*i] != '\'' && s[*i] != '"')
+		return (0);
+	*in_quote = s[*i];
+	(*i)++;
+	*escaped = 0;
+	return (1);
 }
 
 static int	handle_inside(char *s, size_t *i, char *in_quote, int *escaped)
@@ -36,7 +36,7 @@ static int	handle_inside(char *s, size_t *i, char *in_quote, int *escaped)
 		(*i)++;
 		return (1);
 	}
-	if (s[*i] == '\\' && *in_quote != '\'')
+	if (*in_quote == '"' && s[*i] == '\\')
 	{
 		*escaped = !*escaped;
 		(*i)++;
@@ -47,17 +47,15 @@ static int	handle_inside(char *s, size_t *i, char *in_quote, int *escaped)
 	return (1);
 }
 
-static void	handle_outside(char *s, size_t *i)
+static int	handle_outside(char *s, size_t *i)
 {
-	if (s[*i] == '\\')
-	{
+	if (s[*i] != '\\')
+		return (0);
+	(*i)++;
+	if (s[*i] != '\0')
 		(*i)++;
-		if (s[*i])
-			(*i)++;
-	}
+	return (1);
 }
-
-/* ====== main (≤25 lines) ====== */
 
 int	has_unclosed_quotes(char *s)
 {
@@ -70,13 +68,13 @@ int	has_unclosed_quotes(char *s)
 	escaped = 0;
 	while (s[i])
 	{
-		if (!in_quote && enter_quote(s, &i, &in_quote, &escaped))
+		if (enter_quote(s, &i, &in_quote, &escaped))
 			continue ;
 		if (handle_inside(s, &i, &in_quote, &escaped))
 			continue ;
-		handle_outside(s, &i);
-		if (s[i] && s[i] != '\\')
-			i++;
+		if (handle_outside(s, &i))
+			continue ;
+		i++;
 	}
 	return (in_quote != 0);
 }

@@ -12,99 +12,65 @@
 
 #include "../../minishell.h"
 
-static int	is_whitespace(char c)
+int	is_whitespace(char c)
 {
 	return (c == ' ' || c == '\t');
 }
 
-static int	is_operator(char c)
+int	is_operator(char c)
 {
 	return (c == '|' || c == '<' || c == '>' || c == '&');
 }
 
-/*
-** Extract a word token from input, handling quotes
-** Returns the length of the word extracted
-*/
-/* returns length consumed, writes raw slice (quotes/backslashes kept) */
-static int	extract_word(char *input, char **word)
+static int	is_word_cont(char *s, int i, int in_quote)
 {
-	int		i;
-	int		in_quote;     /* 0 or '\'' or '"' */
+	if (!s[i])
+		return (0);
+	if (in_quote)
+		return (1);
+	if (is_whitespace(s[i]) || is_operator(s[i]))
+		return (0);
+	return (1);
+}
+
+/* scans only, finds length */
+static int	measure_word(char *s)
+{
+	int	i;
+	int	in_quote;
 
 	i = 0;
 	in_quote = 0;
-	while (input[i] && (in_quote || (!is_whitespace(input[i])
-				&& !is_operator(input[i]))))
+	while (is_word_cont(s, i, in_quote))
 	{
-		/* enter quote if not already in quotes and we see a quote */
-		if (!in_quote && (input[i] == '\'' || input[i] == '"'))
+		if (!in_quote && (s[i] == '\'' || s[i] == '"'))
 		{
-			in_quote = input[i++];      /* track we’re inside quotes */
-			continue ;
-		}
-
-		/* leave quotes:
-		   - single quotes: never escaped → close on matching '
-		   - double quotes: close on " only if previous char is NOT a backslash
-		*/
-		if (in_quote)
-		{
-			if (input[i] == in_quote)
-			{
-				if (in_quote == '"' && i > 0 && input[i - 1] == '\\')
-				{
-					/* \" does NOT close; keep both chars for remove_quotes */
-					i++;
-					continue ;
-				}
-				in_quote = 0;
-				i++;
-				continue ;
-			}
+			in_quote = s[i];
 			i++;
 			continue ;
 		}
-		/* outside quotes: backslash stays; handled later */
+		if (in_quote && s[i] == in_quote)
+		{
+			if (!(in_quote == '"' && i > 0 && s[i - 1] == '\\'))
+				in_quote = 0;
+			i++;
+			continue ;
+		}
 		i++;
 	}
-	*word = malloc((size_t)i + 1);
-	if (!*word)
-		return (0);
-	ft_strncpy(*word, input, i);
-	(*word)[i] = '\0';
 	return (i);
 }
 
-/*
-** Main lexer function
-** Tokenizes input string into a linked list of tokens
-*/
-t_token	*lexer(char *input)
+/* alloc + copy */
+int	extract_word(char *input, char **word)
 {
-	t_token	*tokens;
-	t_token	*new_token;
-	char	*word;
-	int		len;
+	int	len;
 
-	tokens = NULL;
-	while (*input)
-	{
-		while (is_whitespace(*input))
-			input++;
-		if (!*input)
-			break ;
-		if (is_operator(*input))
-			new_token = get_operator_token(&input);
-		else
-		{
-			len = extract_word(input, &word);
-			new_token = create_token(TOKEN_WORD, word);
-			free(word);
-			input += len;
-		}
-		if (new_token)
-			add_token(&tokens, new_token);
-	}
-	return (tokens);
+	len = measure_word(input);
+	*word = malloc((size_t)len + 1);
+	if (!*word)
+		return (0);
+	ft_strncpy(*word, input, len);
+	(*word)[len] = '\0';
+	return (len);
 }

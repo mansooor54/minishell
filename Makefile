@@ -41,6 +41,7 @@ SRCS = minishell.c \
        $(SRC_DIR)/environment/env_utils.c \
        $(SRC_DIR)/environment/env_array.c \
        $(SRC_DIR)/expander/expander_pipeline.c \
+       $(SRC_DIR)/expander/expander_core.c \
        $(SRC_DIR)/expander/expander_utils.c \
        $(SRC_DIR)/expander/expander_quotes.c \
        $(SRC_DIR)/expander/expander_vars.c \

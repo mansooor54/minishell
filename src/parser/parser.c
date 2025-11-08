@@ -12,19 +12,6 @@
 
 #include "../../minishell.h"
 
-static t_redir	*create_redir(t_token_type type, char *file)
-{
-	t_redir	*redir;
-
-	redir = malloc(sizeof(t_redir));
-	if (!redir)
-		return (NULL);
-	redir->type = type;
-	redir->file = ft_strdup(file);
-	redir->next = NULL;
-	return (redir);
-}
-
 static t_redir	*parse_single_redirection(t_token **tokens)
 {
 	t_redir	*redir;
@@ -38,7 +25,10 @@ static t_redir	*parse_single_redirection(t_token **tokens)
 		return (NULL);
 	if (!(*tokens)->next || !(*tokens)->next->value)
 	{
-		ft_putendl_fd("minishell: syntax error near unexpected token `newline'", 2);
+		ft_putendl_fd(
+			"minishell: syntax error near unexpected token "
+			"`newline'",
+			2);
 		return (NULL);
 	}
 	redir = create_redir((*tokens)->type, (*tokens)->next->value);
@@ -70,66 +60,60 @@ static int	count_args(t_token *tokens)
 	return (count);
 }
 
-t_cmd	*parse_command(t_token **tokens)
+static t_cmd	*new_cmd(int arg_count)
 {
 	t_cmd	*cmd;
-	t_redir	*new_redir;
-	int		i;
-	int		arg_count;
 
 	cmd = malloc(sizeof(t_cmd));
 	if (!cmd)
 		return (NULL);
 	cmd->expanded = 0;
-	arg_count = count_args(*tokens);
 	cmd->args = malloc(sizeof(char *) * (arg_count + 1));
+	if (!cmd->args)
+	{
+		free(cmd);
+		return (NULL);
+	}
 	cmd->redirs = NULL;
+	cmd->next = NULL;
+	return (cmd);
+}
+
+static void	consume_redirs(t_token **tokens, t_cmd *cmd)
+{
+	t_redir	*new_redir;
+
+	while (*tokens && ((*tokens)->type == TOKEN_REDIR_IN
+			|| (*tokens)->type == TOKEN_REDIR_OUT
+			|| (*tokens)->type == TOKEN_REDIR_APPEND
+			|| (*tokens)->type == TOKEN_REDIR_HEREDOC))
+	{
+		new_redir = parse_single_redirection(tokens);
+		if (!new_redir)
+			break ;
+		append_redir(&cmd->redirs, new_redir);
+	}
+}
+
+t_cmd	*parse_command(t_token **tokens)
+{
+	t_cmd	*cmd;
+	int		i;
+	int		arg_count;
+
+	if (!tokens || !*tokens)
+		return (NULL);
+	arg_count = count_args(*tokens);
+	cmd = new_cmd(arg_count);
+	if (!cmd)
+		return (NULL);
 	i = 0;
 	while (*tokens && (*tokens)->type == TOKEN_WORD)
 	{
 		cmd->args[i++] = ft_strdup((*tokens)->value);
 		*tokens = (*tokens)->next;
-		while (*tokens && ((*tokens)->type == TOKEN_REDIR_IN
-				|| (*tokens)->type == TOKEN_REDIR_OUT
-				|| (*tokens)->type == TOKEN_REDIR_APPEND
-				|| (*tokens)->type == TOKEN_REDIR_HEREDOC))
-		{
-			new_redir = parse_single_redirection(tokens);
-			if (new_redir)
-				append_redir(&cmd->redirs, new_redir);
-			else
-				break ;
-		}
+		consume_redirs(tokens, cmd);
 	}
 	cmd->args[i] = NULL;
-	cmd->next = NULL;
 	return (cmd);
-}
-
-void	free_pipeline(t_pipeline *pipeline)
-{
-	t_pipeline	*tmp_pipe;
-	t_cmd		*tmp_cmd;
-	t_redir		*tmp_redir;
-
-	while (pipeline)
-	{
-		tmp_pipe = pipeline;
-		while (pipeline->cmds)
-		{
-			tmp_cmd = pipeline->cmds;
-			free_array(tmp_cmd->args);
-			while (tmp_cmd->redirs)
-			{
-				tmp_redir = tmp_cmd->redirs;
-				tmp_cmd->redirs = tmp_redir->next;
-				free(tmp_redir->file);
-				free(tmp_redir);
-			}
-			pipeline->cmds = tmp_cmd->next;
-			free(tmp_cmd);
-		}
-		pipeline = pipeline->next;
-		free(tmp_pipe);
-	}
 }

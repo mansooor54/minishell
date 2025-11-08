@@ -16,7 +16,9 @@ t_shell	g_shell;
 
 static int	is_all_space(const char *s)
 {
-	size_t i = 0;
+	size_t	i;
+
+	i = 0;
 	while (s && s[i])
 	{
 		if (!ft_isspace((unsigned char)s[i]))

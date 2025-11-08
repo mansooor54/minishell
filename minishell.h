@@ -2,7 +2,7 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+      */
+/*                                                   +:+ +:+         +:+      */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
@@ -134,6 +134,9 @@ void		add_token(t_token **tokens, t_token *new_token);
 void		free_tokens(t_token *tokens);
 int			has_unclosed_quotes(char *str);
 t_token		*get_operator_token(char **input);
+int			is_whitespace(char c);
+int			is_operator(char c);
+int			extract_word(char *input, char **word);
 
 /* ===================== PARSER ===================== */
 t_pipeline	*parser(t_token *tokens);
@@ -141,6 +144,7 @@ t_cmd		*parse_command(t_token **tokens);
 t_redir		*parse_redirections(t_token **tokens);
 void		append_redir(t_redir **head, t_redir *new_redir);
 void		free_pipeline(t_pipeline *pipeline);
+t_redir		*create_redir(t_token_type type, char *file);
 
 /* ===================== EXPANDER ===================== */
 char		*get_env_value(t_env *env, char *key);

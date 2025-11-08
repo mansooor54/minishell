@@ -35,7 +35,6 @@ void	free_array(char **arr)
 ** Join two strings and free the first one
 ** Useful for chaining multiple joins
 */
-/* utils.c */
 char	*ft_strjoin_free(char *s1, char const *s2)
 {
 	char	*res;
@@ -43,7 +42,11 @@ char	*ft_strjoin_free(char *s1, char const *s2)
 	if (!s1 && !s2)
 		return (NULL);
 	if (!s1)
-		return (ft_strdup(s2 ? s2 : ""));
+	{
+		if (!s2)
+			return (NULL);
+		return (ft_strdup(s2));
+	}
 	if (!s2)
 	{
 		res = ft_strdup(s1);

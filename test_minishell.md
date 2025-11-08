@@ -12,8 +12,7 @@ echo '$HOME'           # $HOME
 echo 'A'\''B'          # A'B
 echo "Test Hello"\n "hello"   # Test Hellon hello
 
-1. Complex Variable Expansion
-Bash
+#1. Complex Variable Expansion
 minishell> export VAR1="Hello"
 minishell> export VAR2="World"
 minishell> echo $VAR1 $VAR2
@@ -27,8 +26,7 @@ $VAR1 $VAR2
 
 minishell> echo $VAR1$VAR2
 HelloWorld
-2. Exit Status Chain
-Bash
+#2. Exit Status Chain
 minishell> ls
 # ... files listed ...
 minishell> echo $?
@@ -49,8 +47,9 @@ minishell> echo $?
 minishell> true
 minishell> echo $?
 0
-3. SHLVL Nesting
-Bash
+
+#3. SHLVL Nesting
+
 # Terminal
 $ echo $SHLVL
 1
