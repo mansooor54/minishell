@@ -44,6 +44,11 @@ static void	process_line(char *line, t_shell *shell)
 	tokens = lexer(line);
 	if (!tokens)
 		return ;
+	if (!validate_syntax(tokens, &g_shell))
+	{
+		free_tokens(tokens);
+		return ;
+	}
 	pipeline = parser(tokens);
 	free_tokens(tokens);
 	if (!pipeline)
@@ -67,11 +72,12 @@ void	shell_loop(t_shell *shell)
 		}
 		if (*line && !is_all_space(line))
 		{
-			add_history(line);
+			history_add_line(line);
 			process_line(line, shell);
 		}
 		free(line);
 	}
+	history_save();
 }
 
 /* main.c */

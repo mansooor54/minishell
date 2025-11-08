@@ -145,6 +145,11 @@ t_redir		*parse_redirections(t_token **tokens);
 void		append_redir(t_redir **head, t_redir *new_redir);
 void		free_pipeline(t_pipeline *pipeline);
 t_redir		*create_redir(t_token_type type, char *file);
+int			validate_syntax(t_token *tokens, t_shell *shell);
+void		print_syntax_error(t_token *token);
+int			is_valid_word(t_token *token);
+int			is_control_operator(t_token *token);
+int			is_redirection(t_token *token);
 
 /* ===================== EXPANDER ===================== */
 char		*get_env_value(t_env *env, char *key);
@@ -217,5 +222,12 @@ void		print_logo(void);
 /* ===================== CORE ===================== */
 void		init_shell(t_shell *shell, char **envp);
 void		shell_loop(t_shell *shell);
+
+/* history */
+int			history_init(t_env *env);
+void		history_add_line(const char *line);
+void		history_save(void);
+int			builtin_history(char **args);
+
 
 #endif

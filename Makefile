@@ -62,8 +62,12 @@ SRCS = minishell.c \
        $(SRC_DIR)/parser/parser.c \
        $(SRC_DIR)/parser/parser_utils.c \
        $(SRC_DIR)/parser/parser_pipeline.c \
+       $(SRC_DIR)/parser/paraser_syntax_check.c \
+       $(SRC_DIR)/parser/paraser_syntax_print.c \
        $(SRC_DIR)/utils/utils.c \
        $(SRC_DIR)/signals/signals.c \
+       $(SRC_DIR)/history/history.c \
+       $(SRC_DIR)/history/builtin_history.c \
        minishell_logo.c
 
 # Object files
