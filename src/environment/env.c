@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/06 15:01:22 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 14:31:55 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,5 +81,5 @@ void	init_shell(t_shell *shell, char **envp)
 	shell->exit_status = 0;
 	shell->should_exit = 0;
 	increment_shlvl(&shell->env);
-	history_init(shell->env); 
+	history_init(shell->env);
 }

@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 14:05:40 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 14:30:26 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,8 @@ static void	print_unexpected(char *s)
 }
 
 /* replace only the '<' branch inside print_run_error(...) */
+/* line 43: counts 1 for '<', 2 for '<<' */
+/* line 56: return total >= 6 */
 static void	handle_lt_run(t_token *t)
 {
 	int			total;
@@ -41,20 +43,20 @@ static void	handle_lt_run(t_token *t)
 	cur = t;
 	while (is_lt(cur))
 	{
-		total += tok_op_len(cur); // counts 1 for '<', 2 for '<<'
+		total += tok_op_len(cur);
 		cur = cur->next;
 	}
-
 	if (total <= 3)
 		return (print_unexpected("newline"));
 	if (total == 4)
 		return (print_unexpected("<"));
 	if (total == 5)
 		return (print_unexpected("<<"));
-	return (print_unexpected("<<<")); /* total >= 6 */
+	return (print_unexpected("<<<"));
 }
 
 /* choose correct unexpected token for runs like >>>> or <<<< */
+/* line 75: >>>, >>>> → `>>' */
 void	print_run_error(t_token *t)
 {
 	int			total;
@@ -70,7 +72,7 @@ void	print_run_error(t_token *t)
 			cur = cur->next;
 		}
 		if (total > 3)
-			ft_putendl_fd(ERR_REDIR_APPEND, 2); /* >>>, >>>> → `>>' */
+			ft_putendl_fd(ERR_REDIR_APPEND, 2);
 		else if (total == 2 && (!cur || is_control_operator(cur)
 				|| is_redirection(cur)))
 			ft_putendl_fd(ERR_NEWLINE, 2);

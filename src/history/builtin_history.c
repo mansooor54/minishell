@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 11:11:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 14:33:12 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 int	builtin_history(char **args)
 {
 	HIST_ENTRY	**list;
-	int	i;
+	int			i;
 
 	(void)args;
 	list = history_list();
