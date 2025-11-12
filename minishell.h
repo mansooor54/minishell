@@ -2,11 +2,11 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
-/*                                                   +:+ +:+         +:+      */
+/*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/07 20:55:00 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 14:04:18 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,23 @@
 # include <readline/history.h>
 # include "libft/libft.h"
 
+/* Error messages as constants */
+# define ERR_NEWLINE "minishell: syntax error near unexpected token `newline'"
+# define ERR_PIPE "minishell: syntax error near unexpected token `|'"
+# define ERR_AND "minishell: syntax error near unexpected token `&&'"
+# define ERR_OR "minishell: syntax error near unexpected token `||'"
+# define ERR_REDIR_IN "minishell: syntax error near unexpected token `<'"
+# define ERR_REDIR_OUT "minishell: syntax error near unexpected token `>'"
+# define ERR_REDIR_APPEND "minishell: syntax error near unexpected token `>>'"
+# define ERR_REDIR_HEREDOC "minishell: syntax error near unexpected token `<<'"
+# define ERR_TRIPLE_LT "minishell: syntax error near unexpected token `<<<'"
+# define ERR_MULTIPLE_REDIR_IN \
+	"minishell: syntax error near unexpected token `<<<'"
+# define ERR_MULTIPLE_REDIR_OUT \
+	"minishell: syntax error near unexpected token `>>>'"
+# define ERR_CONSECUTIVE_REDIR \
+	"minishell: syntax error near unexpected token `>'"
+
 /* ===================== TOKENS ===================== */
 typedef enum e_token_type
 {
@@ -36,6 +53,8 @@ typedef enum e_token_type
 	TOKEN_REDIR_OUT,
 	TOKEN_REDIR_APPEND,
 	TOKEN_REDIR_HEREDOC,
+	TOKEN_MULTIPLE_REDIR_IN,
+	TOKEN_MULTIPLE_REDIR_OUT,
 	TOKEN_AND,
 	TOKEN_OR,
 	TOKEN_EOF
@@ -150,6 +169,10 @@ void		print_syntax_error(t_token *token);
 int			is_valid_word(t_token *token);
 int			is_control_operator(t_token *token);
 int			is_redirection(t_token *token);
+int			is_gt(t_token *t);
+int			is_lt(t_token *t);
+int			tok_op_len(t_token *t);
+void		print_run_error(t_token *t);
 
 /* ===================== EXPANDER ===================== */
 char		*get_env_value(t_env *env, char *key);

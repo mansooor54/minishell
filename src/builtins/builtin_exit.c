@@ -6,47 +6,12 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 11:09:40 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-/*
-** Check if string is a valid number
-** Returns 1 if numeric, 0 otherwise
-*/
-// static int	is_numeric_ll(const char *s, long long *out)
-// {
-// 	int			sign;
-// 	long long	val;
-// 	int			i;
-
-// 	if (!s || !*s)
-// 		return (0);
-// 	i = 0;
-// 	sign = 1;
-// 	if (s[i] == '+' || s[i] == '-')
-// 	{
-// 		if (s[i] == '-')
-// 			sign = -1;
-// 		i++;
-// 	}
-// 	if (!ft_isdigit((unsigned char)s[i]))
-// 		return (0);
-// 	val = 0;
-// 	while (ft_isdigit((unsigned char)s[i]))
-// 	{
-// 		val = val * 10 + (s[i] - '0');
-// 		i++;
-// 	}
-// 	if (s[i] != '\0')
-// 		return (0);
-// 	*out = val * sign;
-// 	return (1);
-// }
-
-/* ≤25 lines */
 static int	parse_sign(const char *s, int *i)
 {
 	int	sign;
@@ -61,7 +26,6 @@ static int	parse_sign(const char *s, int *i)
 	return (sign);
 }
 
-/* ≤25 lines */
 static int	parse_digits(const char *s, int *i, long long *val)
 {
 	long long	v;
@@ -81,7 +45,10 @@ static int	parse_digits(const char *s, int *i, long long *val)
 	return (1);
 }
 
-/* ≤25 lines */
+/*
+** Check if string is a valid number
+** Returns 1 if numeric, 0 otherwise
+*/
 static int	is_numeric_ll(const char *s, long long *out)
 {
 	long long	val;

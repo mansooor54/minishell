@@ -6,7 +6,7 @@
 #    By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#              #
-#    Updated: 2025/11/06 15:05:47 by malmarzo         ###   ########.fr        #
+#    Updated: 2025/11/12 13:50:05 by malmarzo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,11 +15,25 @@ NAME = minishell
 # Compiler and flags
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -g
-INCLUDES = -I. -I./libft 
-READLINE_DIR = $(shell brew --prefix readline)
-CFLAGS += -I$(READLINE_DIR)/include
-LDFLAGS = -L$(READLINE_DIR)/lib -lreadline -L./libft -lft
+INCLUDES = -I. -I./libft
 
+# Try to detect readline via pkg-config (Linux) or Homebrew (macOS).
+READLINE_CFLAGS := $(shell pkg-config --cflags readline 2>/dev/null)
+READLINE_LDFLAGS := $(shell pkg-config --libs readline 2>/dev/null)
+
+ifeq ($(READLINE_CFLAGS)$(READLINE_LDFLAGS),)
+READLINE_PREFIX := $(shell brew --prefix readline 2>/dev/null)
+  ifneq ($(READLINE_PREFIX),)
+READLINE_CFLAGS = -I$(READLINE_PREFIX)/include
+READLINE_LDFLAGS = -L$(READLINE_PREFIX)/lib -lreadline
+  else
+READLINE_CFLAGS =
+READLINE_LDFLAGS = -lreadline
+  endif
+endif
+
+CFLAGS += $(READLINE_CFLAGS)
+LDFLAGS = $(READLINE_LDFLAGS) -L./libft -lft
 # Libft
 LIBFT_DIR = libft
 LIBFT = $(LIBFT_DIR)/libft.a
@@ -64,6 +78,7 @@ SRCS = minishell.c \
        $(SRC_DIR)/parser/parser_pipeline.c \
        $(SRC_DIR)/parser/paraser_syntax_check.c \
        $(SRC_DIR)/parser/paraser_syntax_print.c \
+       $(SRC_DIR)/parser/paraser_check_token.c \
        $(SRC_DIR)/utils/utils.c \
        $(SRC_DIR)/signals/signals.c \
        $(SRC_DIR)/history/history.c \

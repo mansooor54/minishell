@@ -6,11 +6,34 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/05 16:18:14 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 14:03:17 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
+
+/* replace your redir branch with this */
+void	print_syntax_error(t_token *token)
+{
+	if (!token)
+		ft_putendl_fd(ERR_NEWLINE, 2);
+	else if (is_redirection(token) && is_redirection(token->next))
+		print_run_error(token);
+	else if (token->type == TOKEN_PIPE)
+		ft_putendl_fd(ERR_PIPE, 2);
+	else if (token->type == TOKEN_AND)
+		ft_putendl_fd(ERR_AND, 2);
+	else if (token->type == TOKEN_OR)
+		ft_putendl_fd(ERR_OR, 2);
+	else if (token->type == TOKEN_REDIR_IN)
+		ft_putendl_fd(ERR_REDIR_IN, 2);
+	else if (token->type == TOKEN_REDIR_OUT)
+		ft_putendl_fd(ERR_REDIR_OUT, 2);
+	else if (token->type == TOKEN_REDIR_APPEND)
+		ft_putendl_fd(ERR_REDIR_APPEND, 2);
+	else if (token->type == TOKEN_REDIR_HEREDOC)
+		ft_putendl_fd(ERR_REDIR_HEREDOC, 2);
+}
 
 /* Add check for consecutive redirections */
 static int	check_consecutive_redirections(t_token *token)
