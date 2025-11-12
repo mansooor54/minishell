@@ -1,2 +1,7 @@
-12-11-2025
-update Parser folder and Makefile
+# 12-11-2025
+    - update Parser folder and Makefile
+    - Norminette Ok
+    - bash-3.2$ ;
+    - bash: syntax error near unexpected token `;'
+    - bash-3.2$ \\
+    - bash: \: command not found

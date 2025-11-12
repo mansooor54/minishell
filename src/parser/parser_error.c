@@ -1,37 +1,20 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   lexer_operator.c                                   :+:      :+:    :+:   */
+/*   parser_error.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 15:03:10 by malmarzo         ###   ########.fr       */
+/*   Created: 2025/11/12 15:05:53 by malmarzo          #+#    #+#             */
+/*   Updated: 2025/11/12 15:06:32 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-/*
-** Identify and create operator token
-** Handles |, ||, &&, <, <<, >, >>
-*/
-
-t_token	*get_operator_token(char **input)
+static void	print_unexpected(const char *s)
 {
-	t_token		*tok;
-
-	tok = try_semicolon(input);
-	if (tok)
-		return (tok);
-	tok = try_or_pipe(input);
-	if (tok)
-		return (tok);
-	tok = try_and(input);
-	if (tok)
-		return (tok);
-	tok = try_inredir(input);
-	if (tok)
-		return (tok);
-	return (try_outredir(input));
+	ft_putstr_fd("minishell: syntax error near unexpected token `", 2);
+	ft_putstr_fd(s, 2);
+	ft_putendl_fd("'", 2);
 }

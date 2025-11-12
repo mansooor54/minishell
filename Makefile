@@ -6,7 +6,7 @@
 #    By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#              #
-#    Updated: 2025/11/12 13:50:05 by malmarzo         ###   ########.fr        #
+#    Updated: 2025/11/12 15:42:25 by malmarzo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -69,9 +69,11 @@ SRCS = minishell.c \
        $(SRC_DIR)/executor/executor_pipeline_utils.c \
        $(SRC_DIR)/executor/executor_pipeline.c \
        $(SRC_DIR)/executor/executor_redirections.c \
+       $(SRC_DIR)/executor/executor_error.c \
        $(SRC_DIR)/lexer/lexer.c \
        $(SRC_DIR)/lexer/lexer_utils.c \
        $(SRC_DIR)/lexer/lexer_operator.c \
+       $(SRC_DIR)/lexer/lexer_operator_type.c \
        $(SRC_DIR)/lexer/lexer_unclose.c \
        $(SRC_DIR)/parser/parser.c \
        $(SRC_DIR)/parser/parser_utils.c \

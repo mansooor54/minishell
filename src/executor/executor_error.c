@@ -1,37 +1,29 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   lexer_operator.c                                   :+:      :+:    :+:   */
+/*   executor_error.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 15:03:10 by malmarzo         ###   ########.fr       */
+/*   Created: 2025/11/12 15:12:28 by malmarzo          #+#    #+#             */
+/*   Updated: 2025/11/12 15:41:19 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-/*
-** Identify and create operator token
-** Handles |, ||, &&, <, <<, >, >>
-*/
-
-t_token	*get_operator_token(char **input)
+// executor_error.c
+void	cmd_not_found(char *name)
 {
-	t_token		*tok;
-
-	tok = try_semicolon(input);
-	if (tok)
-		return (tok);
-	tok = try_or_pipe(input);
-	if (tok)
-		return (tok);
-	tok = try_and(input);
-	if (tok)
-		return (tok);
-	tok = try_inredir(input);
-	if (tok)
-		return (tok);
-	return (try_outredir(input));
+	ft_putstr_fd("minishell: ", 2);
+	ft_putstr_fd(name, 2);
+	ft_putendl_fd(": command not found", 2);
 }
+
+// // in your exec path resolution
+// if (!path_found)
+// {
+// 	cmd_not_found(argv[0]);  // argv[0] == "\\", shown as "\"
+// 	shell->exit_status = 127;
+// 	return;
+// }

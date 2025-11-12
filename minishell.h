@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 14:43:31 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 15:41:56 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,12 +49,13 @@ typedef enum e_token_type
 {
 	TOKEN_WORD,
 	TOKEN_PIPE,
+	TOKEN_AND,
+	TOKEN_OR,
 	TOKEN_REDIR_IN,
 	TOKEN_REDIR_OUT,
 	TOKEN_REDIR_APPEND,
 	TOKEN_REDIR_HEREDOC,
-	TOKEN_AND,
-	TOKEN_OR,
+	TOKEN_INVALID_SEMI,
 	TOKEN_EOF
 }	t_token_type;
 
@@ -154,6 +155,11 @@ t_token		*get_operator_token(char **input);
 int			is_whitespace(char c);
 int			is_operator(char c);
 int			extract_word(char *input, char **word);
+t_token		*try_or_pipe(char **input);
+t_token		*try_and(char **input);
+t_token		*try_inredir(char **input);
+t_token		*try_outredir(char **input);
+t_token		*try_semicolon(char **input);
 
 /* ===================== PARSER ===================== */
 t_pipeline	*parser(t_token *tokens);
@@ -205,6 +211,7 @@ void		cleanup_pipe(int pipefd[2]);
 pid_t		create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io);
 int			update_prev_fd(int prev_read_fd, int pipefd[2], int has_next);
 int			execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx);
+void		cmd_not_found(char *name);
 
 /* ===================== BUILTINS ===================== */
 int			is_builtin(char *cmd);
