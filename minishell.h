@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 14:04:18 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/12 14:43:31 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,8 +53,6 @@ typedef enum e_token_type
 	TOKEN_REDIR_OUT,
 	TOKEN_REDIR_APPEND,
 	TOKEN_REDIR_HEREDOC,
-	TOKEN_MULTIPLE_REDIR_IN,
-	TOKEN_MULTIPLE_REDIR_OUT,
 	TOKEN_AND,
 	TOKEN_OR,
 	TOKEN_EOF
