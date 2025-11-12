@@ -74,10 +74,9 @@ static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
 		path = find_executable(cmd->args[0], shell->env);
 		if (!path)
 		{
-			ft_putstr_fd("minishell: ", STDERR_FILENO);
-			ft_putstr_fd(cmd->args[0], STDERR_FILENO);
-			ft_putendl_fd(": command not found", STDERR_FILENO);
-			exit(127);
+			cmd_not_found(cmd->args[0]);  // argv[0] == "\\", shown as "\"
+			shell->exit_status = 127;
+			return ;
 		}
 		execute_external_child(cmd, shell, path);
 	}

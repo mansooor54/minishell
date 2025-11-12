@@ -43,6 +43,7 @@
 	"minishell: syntax error near unexpected token `>>>'"
 # define ERR_CONSECUTIVE_REDIR \
 	"minishell: syntax error near unexpected token `>'"
+# define ERR_SEMI "minishell: syntax error near unexpected token `;'"
 
 /* ===================== TOKENS ===================== */
 typedef enum e_token_type
@@ -55,7 +56,7 @@ typedef enum e_token_type
 	TOKEN_REDIR_OUT,
 	TOKEN_REDIR_APPEND,
 	TOKEN_REDIR_HEREDOC,
-	TOKEN_INVALID_SEMI,
+	TOKEN_SEMI,
 	TOKEN_EOF
 }	t_token_type;
 
@@ -177,6 +178,7 @@ int			is_gt(t_token *t);
 int			is_lt(t_token *t);
 int			tok_op_len(t_token *t);
 void		print_run_error(t_token *t);
+void		print_unexpected(char *s);
 
 /* ===================== EXPANDER ===================== */
 char		*get_env_value(t_env *env, char *key);
@@ -201,7 +203,8 @@ int			execute_pipeline_loop(t_cmd *cmds, t_shell *shell,
 				pid_t *pids, int cmd_count);
 int			execute_single_builtin_parent(t_cmd *cmd, t_shell *shell);
 int			execute_pipeline(t_cmd *cmds, t_shell *shell);
-void		execute_command(t_cmd *cmd, t_shell *shell);
+void		execute_commands(t_cmd *cmd, t_shell *shell);
+void		execute_command(char **argv, t_shell *shell, char **envp);
 int			setup_redirections(t_redir *redirs);
 int			setup_child_fds(int pipefd[2], int prev_read_fd, int has_next);
 char		*find_executable(char *cmd, t_env *env);

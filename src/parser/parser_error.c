@@ -12,7 +12,7 @@
 
 #include "../../minishell.h"
 
-static void	print_unexpected(const char *s)
+void	print_unexpected(char *s)
 {
 	ft_putstr_fd("minishell: syntax error near unexpected token `", 2);
 	ft_putstr_fd(s, 2);

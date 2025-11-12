@@ -35,7 +35,7 @@ int	ft_atoi(const char *str)
 		result = result * 10 + (str[i++] - '0');
 		digit++;
 	}
-	if (result >= __LONG_LONG_MAX__ || digit > 19)
+	if (result >= LLONG_MAX || digit > 19)
 		return (-(sign == 1));
 	return (result * sign);
 }

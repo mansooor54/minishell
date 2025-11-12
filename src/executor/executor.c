@@ -10,40 +10,50 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
-
-static void	child_exec_external(t_cmd *cmd, t_shell *shell, char *path)
-{
-	if (setup_redirections(cmd->redirs) == -1)
-		exit(1);
-	execve(path, cmd->args, env_to_array(shell->env));
-	exit(1);
-}
-
-static void	wait_and_set_status(pid_t pid, t_shell *shell)
-{
-	int	st;
-
-	waitpid(pid, &st, 0);
-	if (WIFEXITED(st))
-		shell->exit_status = WEXITSTATUS(st);
-}
+#include "minishell.h"
 
 static void	execute_external(t_cmd *cmd, t_shell *shell)
 {
-	char	*path;
-	pid_t	pid;
+	struct stat	st;
+	char		*path;
+	pid_t		pid;
 
+	if (!cmd || !cmd->args || !cmd->args[0])
+		return ;
+
+	/* Case 1: direct path given (contains /) */
+	if (ft_strchr(cmd->args[0], '/'))
+	{
+		/* directory check first */
+		if (stat(cmd->args[0], &st) == 0 && S_ISDIR(st.st_mode))
+		{
+			ft_putstr_fd("minishell: ", 2);
+			ft_putstr_fd(cmd->args[0], 2);
+			ft_putendl_fd(": is a directory", 2);
+			shell->exit_status = 126;
+			return ;
+		}
+	}
+
+	/* Case 2: normal PATH lookup */
 	path = find_executable(cmd->args[0], shell->env);
 	if (!path)
-		return (ft_putstr_fd("minishell: ", 2),
-			ft_putstr_fd(cmd->args[0], 2),
-			ft_putendl_fd(": command not found", 2),
-			(void)(shell->exit_status = 127));
+	{
+		cmd_not_found(cmd->args[0]);
+		shell->exit_status = 127;
+		return ;
+	}
+
 	pid = fork();
 	if (pid == 0)
-		child_exec_external(cmd, shell, path);
-	wait_and_set_status(pid, shell);
+	{
+		if (setup_redirections(cmd->redirs) == -1)
+			exit(1);
+		execve(path, cmd->args, env_to_array(shell->env));
+		perror("execve");
+		exit(errno == EACCES ? 126 : 127);
+	}
+	waitpid(pid, NULL, 0);
 	free(path);
 }
 
@@ -64,7 +74,47 @@ static void	execute_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 		shell->exit_status = WEXITSTATUS(status);
 }
 
-void	execute_command(t_cmd *cmd, t_shell *shell)
+/* stderr helpers you likely already have; keep your own if present */
+static void put2(const char *s) { if (s) write(2, s, (int)ft_strlen(s)); }
+
+static void perror_with_cmd(const char *cmd)
+{
+	put2("minishell: ");
+	put2(cmd);
+	put2(": ");
+	put2(strerror(errno));
+	put2("\n");
+}
+
+static int is_directory(const char *path)
+{
+	struct stat st;
+
+	if (stat(path, &st) == -1)
+		return 0;
+	if (S_ISDIR(st.st_mode))
+		return 1;
+	return 0;
+}
+
+static int has_slash(const char *s)
+{
+	int i;
+
+	if (!s)
+		return 0;
+	i = 0;
+	while (s[i] != '\0')
+	{
+		if (s[i] == '/')
+			return 1;
+		i++;
+	}
+	return 0;
+}
+
+
+void	execute_commands(t_cmd *cmd, t_shell *shell)
 {
 	if (!cmd || !cmd->args || !cmd->args[0])
 		return ;
@@ -77,4 +127,69 @@ void	execute_command(t_cmd *cmd, t_shell *shell)
 	}
 	else
 		execute_external(cmd, shell);
+}
+
+void execute_command(char **argv, t_shell *shell, char **envp)
+{
+	char *path;
+
+	if (!argv || !argv[0] || !argv[0][0])
+	{
+		shell->exit_status = 0;
+		return;
+	}
+
+	/* resolve path: direct if contains '/', else search PATH */
+	path = NULL;
+	if (has_slash(argv[0]) == 1)
+		path = ft_strdup(argv[0]);
+	else
+		path = find_executable(argv[0], shell->env);
+
+	/* not found -> 127 */
+	if (!path)
+	{
+		cmd_not_found(argv[0]);
+		shell->exit_status = 127;
+		return;
+	}
+
+	/* directory -> 126 (e.g., //) */
+	if (is_directory(path) == 1)
+	{
+		put2("minishell: ");
+		put2(argv[0]);
+		put2(": is a directory\n");
+		free(path);
+		shell->exit_status = 126;
+		return;
+	}
+
+	/* permission / existence checks before execve */
+	if (access(path, X_OK) == -1)
+	{
+		if (errno == EACCES)
+		{
+			perror_with_cmd(argv[0]);   /* “Permission denied” */
+			free(path);
+			shell->exit_status = 126;   /* found but not executable */
+			return;
+		}
+		/* any other reason (e.g., removed between resolve and access) */
+		perror_with_cmd(argv[0]);
+		free(path);
+		shell->exit_status = 127;
+		return;
+	}
+
+	/* try to execute */
+	execve(path, argv, envp);
+
+	/* execve only returns on error */
+	if (errno == EACCES)
+		shell->exit_status = 126;
+	else
+		shell->exit_status = 127;
+	perror_with_cmd(argv[0]);
+	free(path);
 }

@@ -20,6 +20,8 @@
 # include <string.h>
 # include <fcntl.h>
 # include <unistd.h>
+# include <limits.h>
+# include <stdbool.h>
 
 int		ft_atoi(const char *str);
 void	ft_bzero(void *s, size_t n);

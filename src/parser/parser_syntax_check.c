@@ -42,22 +42,37 @@ static int	validate_token_sequence(t_token *t, t_token *next)
 }
 
 /* Update validate_syntax function */
-int	validate_syntax(t_token *t, t_shell *shell)
-{
-	t_token	*next;
+/* src/parser/paraser_syntax_check.c */
 
-	(void)shell;
-	if (!t)
-		return (1);
-	if (is_control_operator(t))
+static int	check_invalid_semi(t_token *t)
+{
+	if (t && t->type == TOKEN_SEMI)
 	{
-		print_syntax_error(t);
+		print_unexpected(";");
 		g_shell.exit_status = 258;
 		return (0);
 	}
-	while (t)
+	return (1);
+}
+
+/* call inside your main validate loop */
+int	validate_syntax(t_token *tokens, t_shell *shell)
+{
+	t_token	*t;
+	t_token	*next;
+
+	(void)shell;
+	if (!tokens)
+		return (1);
+	t = tokens;
+	if (!check_invalid_semi(t))
+		return (0);
+	while (t && t->next)
 	{
 		next = t->next;
+		if (!check_invalid_semi(next))
+			return (0);
+		/* your existing sequence checks */
 		if (!validate_token_sequence(t, next))
 			return (0);
 		t = t->next;

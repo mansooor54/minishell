@@ -23,13 +23,7 @@ int	tok_op_len(t_token *t)
 	return (0);
 }
 
-/* shared helper */
-static void	print_unexpected(char *s)
-{
-	ft_putstr_fd("minishell: syntax error near unexpected token `", 2);
-	ft_putstr_fd(s, 2);
-	ft_putendl_fd("'", 2);
-}
+/* print_unexpected is now in parser_error.c */
 
 /* replace only the '<' branch inside print_run_error(...) */
 /* line 43: counts 1 for '<', 2 for '<<' */
@@ -88,10 +82,22 @@ void	print_run_error(t_token *t)
 void	print_syntax_error(t_token *token)
 {
 	if (!token)
-		ft_putendl_fd(ERR_NEWLINE, 2);
-	else if (is_redirection(token) && is_redirection(token->next))
+	{
+		print_unexpected("newline");
+		return ;
+	}
+	if (token->type == TOKEN_SEMI)
+	{
+		//print_unexpected(";");
+		ft_putendl_fd(ERR_SEMI, 2);
+		return ;
+	}
+	if (is_redirection(token) && is_redirection(token->next))
+	{
 		print_run_error(token);
-	else if (token->type == TOKEN_PIPE)
+		return ;
+	}
+	if (token->type == TOKEN_PIPE)
 		ft_putendl_fd(ERR_PIPE, 2);
 	else if (token->type == TOKEN_AND)
 		ft_putendl_fd(ERR_AND, 2);

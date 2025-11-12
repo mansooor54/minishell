@@ -83,7 +83,7 @@ int	execute_pipeline(t_cmd *cmds, t_shell *shell)
 			shell->exit_status = ret;
 			return (ret);
 		}
-		execute_command(cmds, shell);
+		execute_commands(cmds, shell);
 		return (shell->exit_status);
 	}
 	return (execute_multi_pipeline(cmds, shell, count));

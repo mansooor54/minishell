@@ -12,18 +12,9 @@
 
 #include "../../minishell.h"
 
-// executor_error.c
 void	cmd_not_found(char *name)
 {
 	ft_putstr_fd("minishell: ", 2);
 	ft_putstr_fd(name, 2);
 	ft_putendl_fd(": command not found", 2);
 }
-
-// // in your exec path resolution
-// if (!path_found)
-// {
-// 	cmd_not_found(argv[0]);  // argv[0] == "\\", shown as "\"
-// 	shell->exit_status = 127;
-// 	return;
-// }

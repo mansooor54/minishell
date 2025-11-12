@@ -16,7 +16,6 @@
 ** Identify and create operator token
 ** Handles |, ||, &&, <, <<, >, >>
 */
-
 t_token	*get_operator_token(char **input)
 {
 	t_token		*tok;

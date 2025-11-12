@@ -32,6 +32,7 @@ static int	init_ctx(t_exp_ctx *c, char *s, t_env *env, int st)
 	return (c->result != NULL);
 }
 
+/* Helper: check if current character is a quote */
 static int	is_quote(t_exp_ctx *c)
 {
 	char	ch;
@@ -40,6 +41,7 @@ static int	is_quote(t_exp_ctx *c)
 	return (ch == '\'' || ch == '"');
 }
 
+/* Helper: handle quote toggling during expansion */
 static void	handle_quote(t_exp_ctx *c)
 {
 	if (!c->in_quote)

@@ -12,6 +12,16 @@
 
 #include "../../minishell.h"
 
+t_token	*try_semicolon(char **input)
+{
+	if (**input == ';')
+	{
+		(*input)++;
+		return (create_token(TOKEN_SEMI, ";"));
+	}
+	return (NULL);
+}
+
 t_token	*try_or_pipe(char **input)
 {
 	if (**input != '|')
@@ -61,16 +71,6 @@ t_token	*try_outredir(char **input)
 	{
 		(*input)++;
 		return (create_token(TOKEN_REDIR_OUT, ">"));
-	}
-	return (NULL);
-}
-
-t_token	*try_semicolon(char **input)
-{
-	if (**input == ';')
-	{
-		(*input)++;
-		return (create_token(TOKEN_INVALID_SEMI, ";"));
 	}
 	return (NULL);
 }
