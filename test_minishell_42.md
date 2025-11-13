@@ -121,7 +121,7 @@ cat << EOF
 line $HOME
 EOF
 
-Quoted delimiter
+# Quoted delimiter
 cat << "EOF"
 line $HOME
 EOF
@@ -130,37 +130,37 @@ EOF
 Expected:
 Quoted delimiter → no variable expansion.
 
-5.6 Redirection syntax errors
+# 5.6 Redirection syntax errors
 >
 >>
 <<<
 <<
 echo hi >
 
-6. Pipes
-6.1 Simple pipe
+# 6. Pipes
+# 6.1 Simple pipe
 echo "hello" | cat
 
-6.2 Multi-pipe
+# 6.2 Multi-pipe
 echo "test" | cat | cat | cat
 
-6.3 Pipe heavy example
+# 6.3 Pipe heavy example
 ls -1 | grep '\.c' | wc -l
 
-6.4 Redirect + pipe
+# 6.4 Redirect + pipe
 echo "abc" | cat > piped_out
 cat piped_out
 
-7. Environment Variables
-7.1 Basic expansion
+# 7. Environment Variables
+# 7.1 Basic expansion
 echo $HOME
 echo "$HOME"
 echo '$HOME'
 
-7.2 Undefined variable
+# 7.2 Undefined variable
 echo $DOES_NOT_EXIST
 
-7.3 $?
+# 7.3 $?
 false
 echo $?
 true
@@ -168,32 +168,32 @@ echo $?
 ls /no/such/file
 echo $?
 
-7.4 Combining text
+# 7.4 Combining text
 echo "status=$?"
 
-8. Signals (Interactive Only)
-8.1 Ctrl-C at prompt
+# 8. Signals (Interactive Only)
+# 8.1 Ctrl-C at prompt
 
 Press Ctrl-C
 Expected:
 New prompt + exit code 130.
 
-8.2 Ctrl-C during a command
+# 8.2 Ctrl-C during a command
 sleep 10
-# press Ctrl-C
+press Ctrl-C
 
-8.3 Ctrl-D
-
+# 8.3 Ctrl-D
+press Ctrl-D
 Expected:
 Exit minishell.
 
 8.4 Ctrl-\
-
+press Ctrl-\
 Expected:
 Do nothing.
 
-9. Builtins
-9.1 echo
+# 9. Builtins
+# 9.1 echo
 echo hello world
 echo -n hello
 echo -n -n -n abc

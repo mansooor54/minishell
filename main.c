@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/06 14:57:20 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:46:49 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,6 +90,7 @@ int	main(int argc, char **argv, char **envp)
 	print_logo();
 	init_shell(&g_shell, envp);
 	setup_signals();
+	init_terminal();
 	shell_loop(&g_shell);
 	rl_clear_history();
 	free_env(g_shell.env);

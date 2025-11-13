@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/13 12:41:02 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:58:47 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,7 +124,19 @@ char	*read_logical_line(void)
 	{
 		more = readline("> ");
 		if (!more)
-			break ;
+		{
+			/* EOF during continuation: cancel whole logical line */
+			free(line);
+			return (NULL);
+		}
+		/* Ctrl-C on continuation: handler sets exit_status = 130,
+		   readline usually returns empty string "" */
+		if (g_shell.exit_status == 130 && more[0] == '\0')
+		{
+			free(more);
+			free(line);
+			return (NULL);
+		}
 		line = join_continuation(line, more);
 		free(more);
 	}

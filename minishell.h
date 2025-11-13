@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 15:41:56 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:28:41 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 # include <signal.h>
+# include <termios.h>
 # include <errno.h>
 # include <readline/readline.h>
 # include <readline/history.h>
@@ -244,6 +245,7 @@ void		parse_env_string(char *env_str, char **key, char **value);
 void		setup_signals(void);
 void		handle_sigint(int sig);
 void		handle_sigquit(int sig);
+void        init_terminal(void);
 
 /* ===================== UTILS ===================== */
 void		free_array(char **arr);

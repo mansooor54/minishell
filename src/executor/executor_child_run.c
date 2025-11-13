@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/04 00:00:00 by your_login        #+#    #+#             */
-/*   Updated: 2025/11/05 15:16:08 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:25:43 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,15 +101,23 @@ pid_t	create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io)
 
 	pid = fork();
 	if (pid == -1)
-		return (print_error("fork", strerror(errno)), -1);
+	{
+		print_error("fork", strerror(errno));
+		return (-1);
+	}
 	if (pid == 0)
 	{
+		/* CHILD PROCESS: restore default signal behavior */
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+
 		pipefd[0] = io->pipe_rd;
 		pipefd[1] = io->pipe_wr;
 		if (setup_child_fds(pipefd, io->prev_rd, io->has_next) == -1)
 			exit(1);
+
 		execute_cmd_child(cmd, shell);
-		exit(1);
+		exit(1); /* should not reach here if execve succeeds */
 	}
 	return (pid);
 }
