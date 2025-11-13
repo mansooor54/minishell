@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   paraser_syntax_print.c                             :+:      :+:    :+:   */
+/*   parser_syntax_print.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 15:09:48 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 10:45:12 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,18 +86,18 @@ void	print_syntax_error(t_token *token)
 		print_unexpected("newline");
 		return ;
 	}
-	if (token->type == TOKEN_SEMI)
+	else if (token->type == TOKEN_SEMI)
 	{
-		//print_unexpected(";");
 		ft_putendl_fd(ERR_SEMI, 2);
+		ft_putstr_fd("minishell: syntax error near unexpected token `;'\n", 2);
 		return ;
 	}
-	if (is_redirection(token) && is_redirection(token->next))
+	else if (is_redirection(token) && is_redirection(token->next))
 	{
 		print_run_error(token);
 		return ;
 	}
-	if (token->type == TOKEN_PIPE)
+	else if (token->type == TOKEN_PIPE)
 		ft_putendl_fd(ERR_PIPE, 2);
 	else if (token->type == TOKEN_AND)
 		ft_putendl_fd(ERR_AND, 2);

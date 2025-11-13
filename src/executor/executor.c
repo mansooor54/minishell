@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/05 15:38:35 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 11:56:09 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@ static void	execute_external(t_cmd *cmd, t_shell *shell)
 	struct stat	st;
 	char		*path;
 	pid_t		pid;
+	int			status;
 
 	if (!cmd || !cmd->args || !cmd->args[0])
 		return ;
@@ -34,7 +35,6 @@ static void	execute_external(t_cmd *cmd, t_shell *shell)
 			return ;
 		}
 	}
-
 	/* Case 2: normal PATH lookup */
 	path = find_executable(cmd->args[0], shell->env);
 	if (!path)
@@ -45,16 +45,38 @@ static void	execute_external(t_cmd *cmd, t_shell *shell)
 	}
 
 	pid = fork();
+	if (pid == -1)
+	{
+		print_error("fork", strerror(errno));
+		free(path);
+		shell->exit_status = 127;
+		return ;
+	}
 	if (pid == 0)
 	{
 		if (setup_redirections(cmd->redirs) == -1)
 			exit(1);
 		execve(path, cmd->args, env_to_array(shell->env));
-		perror("execve");
-		exit(errno == EACCES ? 126 : 127);
+		if (errno == EACCES)
+			exit(126);
+		else
+			exit(127);
 	}
-	waitpid(pid, NULL, 0);
 	free(path);
+/* PARENT: read child status and save it */
+	status = 0;
+	if (waitpid(pid, &status, 0) == -1)
+	{
+		print_error("waitpid", strerror(errno));
+		shell->exit_status = 1;
+	}
+	else
+	{
+		if (WIFEXITED(status))
+			shell->exit_status = WEXITSTATUS(status);
+		else if (WIFSIGNALED(status))
+			shell->exit_status = 128 + WTERMSIG(status);
+	}
 }
 
 static void	execute_builtin_with_redir(t_cmd *cmd, t_shell *shell)

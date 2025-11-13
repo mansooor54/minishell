@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   redirections.c                                     :+:      :+:    :+:   */
+/*   executor_redirections.c                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 12:50:35 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ static int	handle_heredoc(char *delimiter)
 {
 	int		pipe_fd[2];
 	char	*line;
+	char	*expanded;
 
 	if (pipe(pipe_fd) == -1)
 		return (-1);
@@ -27,9 +28,19 @@ static int	handle_heredoc(char *delimiter)
 			free(line);
 			break ;
 		}
-		write(pipe_fd[1], line, ft_strlen(line));
+		/* expand variables in heredoc line, like bash does for unquoted EOF */
+		expanded = expand_variables(line, g_shell.env, g_shell.exit_status);
+		if (!expanded)
+		{
+			free(line);
+			close(pipe_fd[1]);
+			close(pipe_fd[0]);
+			return (-1);
+		}
+		write(pipe_fd[1], expanded, ft_strlen(expanded));
 		write(pipe_fd[1], "\n", 1);
 		free(line);
+		free(expanded);
 	}
 	close(pipe_fd[1]);
 	dup2(pipe_fd[0], STDIN_FILENO);

@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/05 11:20:00 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 12:41:02 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,12 +108,16 @@ static char *join_continuation(char *line, char *next)
 	return tmp;
 }
 
+/*
+** \001 and \002 are control characters (SOH and STX).
+** Readline uses them to know “this part does not take cursor space”.
+*/
 char	*read_logical_line(void)
 {
 	char	*line;
 	char	*more;
 
-	line = readline("\033[1;33mminishell> \033[0m");
+	line = readline("\001\033[1;33m\002minishell> \001\033[0m\002");
 	if (!line)
 		return (NULL);
 	while (needs_continuation(line))

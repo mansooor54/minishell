@@ -6,7 +6,7 @@
 #    By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#              #
-#    Updated: 2025/11/12 15:42:25 by malmarzo         ###   ########.fr        #
+#    Updated: 2025/11/13 11:58:13 by malmarzo         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -40,7 +40,7 @@ LIBFT = $(LIBFT_DIR)/libft.a
 
 # Source files
 SRC_DIR = src
-SRCS = minishell.c \
+SRCS = main.c \
        $(SRC_DIR)/builtins/builtins.c \
        $(SRC_DIR)/builtins/builtin_echo.c \
        $(SRC_DIR)/builtins/builtin_cd.c \

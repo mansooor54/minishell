@@ -12,6 +12,8 @@ echo '$HOME'           # $HOME
 echo 'A'\''B'          # A'B
 echo "Test Hello"\n "hello"   # Test Hellon hello
 
+
+
 #1. Complex Variable Expansion
 minishell> export VAR1="Hello"
 minishell> export VAR2="World"

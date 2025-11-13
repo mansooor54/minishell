@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/05 16:04:30 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 12:21:28 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ int	is_whitespace(char c)
 
 int	is_operator(char c)
 {
-	return (c == '|' || c == '<' || c == '>' || c == '&');
+	return (c == '|' || c == '<' || c == '>' || c == '&' || c == ';');
 }
 
 static int	is_word_cont(char *s, int i, int in_quote)
@@ -61,58 +61,71 @@ static int	measure_word(char *s)
 	return (i);
 }
 
-/* Collapse escapes outside quotes:  \\x -> \x,  \\ -> \  */
-static char *unescape_outside_quotes(const char *s)
-{
-	int   i = 0, j = 0;
-	char  inq = 0;
-	char *out = malloc(ft_strlen(s) + 1);
+// /* Collapse escapes outside quotes:  \\x -> \x,  \\ -> \  */
+// static char *unescape_outside_quotes(const char *s)
+// {
+// 	int   i = 0, j = 0;
+// 	char  inq = 0;
+// 	char *out = malloc(ft_strlen(s) + 1);
 
-	if (!out) return NULL;
-	while (s[i])
-	{
-		if (!inq && (s[i] == '\'' || s[i] == '"'))
-		{
-			inq = s[i++];
-			continue;                 /* remove quote chars */
-		}
-		if (inq && s[i] == inq)      /* closing quote */
-		{
-			inq = 0;
-			i++;
-			continue;                 /* remove quote chars */
-		}
-		if (!inq && s[i] == '\\' && s[i + 1] != '\0')
-		{
-			out[j++] = s[i + 1];     /* eat the backslash, keep next char */
-			i += 2;
-			continue;
-		}
-		out[j++] = s[i++];
-	}
-	out[j] = '\0';
-	return out;
-}
+// 	if (!out) return NULL;
+// 	while (s[i])
+// 	{
+// 		if (!inq && (s[i] == '\'' || s[i] == '"'))
+// 		{
+// 			inq = s[i++];
+// 			continue;                 /* remove quote chars */
+// 		}
+// 		if (inq && s[i] == inq)      /* closing quote */
+// 		{
+// 			inq = 0;
+// 			i++;
+// 			continue;                 /* remove quote chars */
+// 		}
+// 		if (!inq && s[i] == '\\' && s[i + 1] != '\0')
+// 		{
+// 			out[j++] = s[i + 1];     /* eat the backslash, keep next char */
+// 			i += 2;
+// 			continue;
+// 		}
+// 		out[j++] = s[i++];
+// 	}
+// 	out[j] = '\0';
+// 	return out;
+// }
 
 /* alloc + copy */
+// int	extract_word(char *input, char **word)
+// {
+// 	int   len;
+// 	char *raw;
+// 	char *un;
+
+// 	len = measure_word(input);                                /* scans span */
+// 	raw = malloc((size_t)len + 1);
+// 	if (!raw)
+// 		return 0;
+// 	ft_strncpy(raw, input, len);
+// 	raw[len] = '\0';
+
+// 	un = unescape_outside_quotes(raw);                        /* NEW */
+// 	free(raw);
+// 	if (!un)
+// 		return 0;
+
+// 	*word = un;
+// 	return len;                                              /* advance input */
+// }
+
 int	extract_word(char *input, char **word)
 {
-	int   len;
-	char *raw;
-	char *un;
+	int	len;
 
-	len = measure_word(input);                                /* scans span */
-	raw = malloc((size_t)len + 1);
-	if (!raw)
-		return 0;
-	ft_strncpy(raw, input, len);
-	raw[len] = '\0';
-
-	un = unescape_outside_quotes(raw);                        /* NEW */
-	free(raw);
-	if (!un)
-		return 0;
-
-	*word = un;
-	return len;                                              /* advance input */
+	len = measure_word(input);
+	*word = malloc((size_t)len + 1);
+	if (!*word)
+		return (0);
+	ft_strncpy(*word, input, len);
+	(*word)[len] = '\0';
+	return (len);
 }

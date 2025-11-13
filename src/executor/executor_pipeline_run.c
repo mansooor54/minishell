@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/04 00:00:00 by your_login        #+#    #+#             */
-/*   Updated: 2025/11/05 16:29:06 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 11:42:04 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,25 @@ static int	execute_multi_pipeline(t_cmd *cmds, t_shell *shell, int count)
 	}
 	ret = wait_for_children(pids, count);
 	free(pids);
+	shell->exit_status = ret;
 	return (ret);
+}
+
+/* run one builtin without forking if no redirs */
+int	execute_single_builtin_parent(t_cmd *cmd, t_shell *shell)
+{
+	if (!cmd || !cmd->args || !cmd->args[0])
+		return (0);
+	if (!is_builtin(cmd->args[0]))
+		return (-1);
+	if (cmd->redirs != NULL)
+		return (-1);
+	if (!cmd->expanded)
+	{
+		expand_cmd_args(cmd, shell->env, shell->exit_status);
+		cmd->expanded = 1;
+	}
+	return (execute_builtin(cmd, shell));
 }
 
 /* public entry used by executor() */
@@ -87,23 +105,6 @@ int	execute_pipeline(t_cmd *cmds, t_shell *shell)
 		return (shell->exit_status);
 	}
 	return (execute_multi_pipeline(cmds, shell, count));
-}
-
-/* run one builtin without forking if no redirs */
-int	execute_single_builtin_parent(t_cmd *cmd, t_shell *shell)
-{
-	if (!cmd || !cmd->args || !cmd->args[0])
-		return (0);
-	if (!is_builtin(cmd->args[0]))
-		return (-1);
-	if (cmd->redirs != NULL)
-		return (-1);
-	if (!cmd->expanded)
-	{
-		expand_cmd_args(cmd, shell->env, shell->exit_status);
-		cmd->expanded = 1;
-	}
-	return (execute_builtin(cmd, shell));
 }
 
 int	wait_for_children(pid_t *pids, int count)
