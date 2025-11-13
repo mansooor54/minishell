@@ -105,6 +105,7 @@ typedef struct s_shell
 	t_env	*env;
 	int		exit_status;
 	int		should_exit;
+	int		sigint_during_read;
 }	t_shell;
 
 extern t_shell	g_shell;
@@ -216,6 +217,34 @@ pid_t		create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io);
 int			update_prev_fd(int prev_read_fd, int pipefd[2], int has_next);
 int			execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx);
 void		cmd_not_found(char *name);
+/* executor_external.c */
+void	execute_external(t_cmd *cmd, t_shell *shell);
+
+/* executor_commands.c */
+void	execute_commands(t_cmd *cmd, t_shell *shell);
+void	perror_with_cmd(const char *cmd);
+int		is_directory(const char *path);
+int		has_slash(const char *s);
+
+/* executor_simple.c */
+void	execute_command(char **argv, t_shell *shell, char **envp);
+/* executor_path_utils.c */
+int		is_exec_file(const char *path);
+char	*join_cmd_path(const char *dir, const char *cmd);
+size_t	seg_end(const char *path, size_t start);
+char	*dup_segment_or_dot(const char *path, size_t start, size_t end);
+
+/* executor_path_search.c */
+char	*search_in_path(const char *path, const char *cmd);
+
+/* executor_path.c */
+char	*find_executable(char *cmd, t_env *env);
+/* executor_redir_heredoc.c */
+int		handle_heredoc(char *delimiter);
+
+/* executor_redir_io.c */
+int		handle_input(char *file);
+int		handle_output(char *file, int append);
 
 /* ===================== BUILTINS ===================== */
 int			is_builtin(char *cmd);
@@ -257,6 +286,7 @@ char		*read_joined_line(t_shell *shell);
 void		init_shell(t_shell *shell, char **envp);
 void		shell_loop(t_shell *shell);
 char		*read_logical_line(void);
+int			needs_continuation(const char *s);
 
 /* history */
 int			history_init(t_env *env);

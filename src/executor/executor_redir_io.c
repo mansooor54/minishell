@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   executor_redirections.c                            :+:      :+:    :+:   */
+/*   executor_redir_io.c                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,26 +12,41 @@
 
 #include "minishell.h"
 
-static int	process_single_redirection(t_redir *redir)
+int	handle_input(char *file)
 {
-	if (redir->type == TOKEN_REDIR_IN)
-		return (handle_input(redir->file));
-	else if (redir->type == TOKEN_REDIR_OUT)
-		return (handle_output(redir->file, 0));
-	else if (redir->type == TOKEN_REDIR_APPEND)
-		return (handle_output(redir->file, 1));
-	else if (redir->type == TOKEN_REDIR_HEREDOC)
-		return (handle_heredoc(redir->file));
+	int	fd;
+
+	fd = open(file, O_RDONLY);
+	if (fd == -1)
+	{
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(file, 2);
+		ft_putendl_fd(": No such file or directory", 2);
+		return (-1);
+	}
+	dup2(fd, STDIN_FILENO);
+	close(fd);
 	return (0);
 }
 
-int	setup_redirections(t_redir *redirs)
+int	handle_output(char *file, int append)
 {
-	while (redirs)
+	int	fd;
+	int	flags;
+
+	if (append)
+		flags = O_WRONLY | O_CREAT | O_APPEND;
+	else
+		flags = O_WRONLY | O_CREAT | O_TRUNC;
+	fd = open(file, flags, 0644);
+	if (fd == -1)
 	{
-		if (process_single_redirection(redirs) == -1)
-			return (-1);
-		redirs = redirs->next;
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(file, 2);
+		ft_putendl_fd(": Permission denied", 2);
+		return (-1);
 	}
+	dup2(fd, STDOUT_FILENO);
+	close(fd);
 	return (0);
 }

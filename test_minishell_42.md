@@ -199,7 +199,7 @@ echo -n hello
 echo -n -n -n abc
 echo "-n" hello
 
-9.2 cd
+# 9.2 cd
 pwd
 cd ..
 pwd
@@ -208,11 +208,11 @@ pwd
 cd /no/such/dir
 echo $?
 
-9.3 pwd
+# 9.3 pwd
 pwd
 /bin/pwd
 
-9.4 export
+# 9.4 export
 export TESTVAR=hello
 echo $TESTVAR
 export TESTVAR=world
@@ -221,37 +221,37 @@ export ABC
 env | grep ABC
 export
 
-9.5 unset
+# 9.5 unset
 export TEMPVAR=123
 echo $TEMPVAR
 unset TEMPVAR
 echo $TEMPVAR
 
-9.6 env
+# 9.6 env
 env
 env | grep HOME
 env BADARG
 
-9.7 exit
-Numeric:
+# 9.7 exit
+# Numeric:
 exit 42
 
-Overflow:
-exit 99999999999999999999
+# Overflow:
+exit 99999999999999999999 //diffrent result in bash
 
-Too many args:
+# Too many args:
 exit 1 2
 
-10. Non-required Features (Ensure no crash)
-10.1 && and ||
+# 10. Non-required Features (Ensure no crash)
+# 10.1 && and ||
 true && echo yes
 false || echo yes
 
-10.2 Semicolon
+# 10.2 Semicolon //diffrent result in bash
 echo hi ; echo bye
 ;
 
-11. How to Use This Test Plan
+# 11. How to Use This Test Plan
 
 Run each test in bash.
 

@@ -20,9 +20,6 @@ t_token	*get_operator_token(char **input)
 {
 	t_token		*tok;
 
-	tok = try_semicolon(input);
-	if (tok)
-		return (tok);
 	tok = try_or_pipe(input);
 	if (tok)
 		return (tok);

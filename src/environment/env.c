@@ -80,6 +80,7 @@ void	init_shell(t_shell *shell, char **envp)
 	shell->env = init_env(envp);
 	shell->exit_status = 0;
 	shell->should_exit = 0;
+	shell->sigint_during_read = 0;
 	increment_shlvl(&shell->env);
 	history_init(shell->env);
 }

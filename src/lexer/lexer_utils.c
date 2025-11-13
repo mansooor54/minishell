@@ -19,7 +19,7 @@ int	is_whitespace(char c)
 
 int	is_operator(char c)
 {
-	return (c == '|' || c == '<' || c == '>' || c == '&' || c == ';');
+	return (c == '|' || c == '<' || c == '>' || c == '&');
 }
 
 static int	is_word_cont(char *s, int i, int in_quote)

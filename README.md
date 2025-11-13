@@ -30,6 +30,12 @@ This project implements a basic Unix shell that can:
 └── libft/                      # Custom C library
 ```
 
+# compine all files in one:
+cat src/lexer/*.c src/parser/*.c src/executor/*.c src/builtins/*.c src/core/*.c src/environment/*.c src/expander/*.c src/history/*.c src/signals/*.c src/utils/*.c main.c minishell.h > minishell_update.c
+
+# Remove repeat include:
+grep -h '^#include' src/**/*.c | sort -u > tmp_includes.h\ngrep -hv '^#include' libft/*.c >> tmp_includes.h\nmv tmp_includes.h merged_libft_small.c\n
+
 ## Compilation
 
 ```bash

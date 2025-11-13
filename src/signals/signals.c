@@ -24,6 +24,8 @@ void	handle_sigint(int sig)
 	rl_on_new_line();
 	rl_redisplay();
 	g_shell.exit_status = 130;
+	g_shell.sigint_during_read = 1;
+	rl_done = 1;
 }
 
 /*
@@ -40,13 +42,13 @@ void	handle_sigquit(int sig)
 ** ^C is printed by the terminal itself (ECHOCTL), not by your handle_sigint.
 	To make minishell behave like bash (no ^C shown), you must disable ECHOCTL 
 	on the terminal.
-Reads current terminal settings.
-Turns off the ECHOCTL flag so the kernel stops printing ^C.
-Applies the new settings.
-No ternary operator is used.
-Press Ctrl-C at the prompt.
-You should now see only a new line and a fresh
- minishell> prompt, with no ^C, just like bash.
+** Reads current terminal settings.
+** Turns off the ECHOCTL flag so the kernel stops printing ^C.
+** Applies the new settings.
+** No ternary operator is used.
+** Press Ctrl-C at the prompt.
+** You should now see only a new line and a fresh
+ 	minishell> prompt, with no ^C, just like bash.
 */
 void	init_terminal(void)
 {

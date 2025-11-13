@@ -12,12 +12,6 @@
 
 #include "minishell.h"
 
-/*
-** execute_builtin_child - Execute builtin command in child process
-**
-** @param cmd: Command structure
-** @param shell: Shell state
-*/
 static void	execute_builtin_child(t_cmd *cmd, t_shell *shell)
 {
 	int	exit_code;
@@ -26,12 +20,6 @@ static void	execute_builtin_child(t_cmd *cmd, t_shell *shell)
 	exit(exit_code);
 }
 
-/*
-** execute_external_child - Execute external command in child process
-**
-** @param cmd: Command structure
-** @param shell: Shell state
-*/
 static void	execute_external_child(t_cmd *cmd, t_shell *shell, char *path)
 {
 	char	**envp;
@@ -50,15 +38,6 @@ static void	execute_external_child(t_cmd *cmd, t_shell *shell, char *path)
 	exit(126);
 }
 
-/*
-** execute_cmd_child - Execute command in child process
-**
-** This function handles the complete child execution including
-** redirections and command type detection.
-**
-** @param cmd: Command to execute
-** @param shell: Shell state
-*/
 static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
 {
 	char	*path;
@@ -74,7 +53,7 @@ static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
 		path = find_executable(cmd->args[0], shell->env);
 		if (!path)
 		{
-			cmd_not_found(cmd->args[0]);  // argv[0] == "\\", shown as "\"
+			cmd_not_found(cmd->args[0]);
 			shell->exit_status = 127;
 			return ;
 		}
@@ -82,18 +61,6 @@ static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
 	}
 }
 
-/*
-** create_child_process - Fork and execute command in child
-**
-** @param cmd: Command to execute
-** @param shell: Shell state
-** @param pipefd: Current pipe fds
-** @param prev_read_fd: Previous pipe read end
-** @param has_next: 1 if not last command
-**
-** Return: Child PID on success, -1 on error
-*/
-/* was: (t_cmd*, t_shell*, int pipefd[2], int prev_read_fd, int has_next) */
 pid_t	create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io)
 {
 	pid_t	pid;
@@ -107,17 +74,14 @@ pid_t	create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io)
 	}
 	if (pid == 0)
 	{
-		/* CHILD PROCESS: restore default signal behavior */
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
-
 		pipefd[0] = io->pipe_rd;
 		pipefd[1] = io->pipe_wr;
 		if (setup_child_fds(pipefd, io->prev_rd, io->has_next) == -1)
 			exit(1);
-
 		execute_cmd_child(cmd, shell);
-		exit(1); /* should not reach here if execve succeeds */
+		exit(1);
 	}
 	return (pid);
 }

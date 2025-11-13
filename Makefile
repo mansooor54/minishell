@@ -61,6 +61,8 @@ SRCS = main.c \
        $(SRC_DIR)/expander/expander_vars.c \
        $(SRC_DIR)/expander/expander.c \
        $(SRC_DIR)/executor/executor.c \
+       $(SRC_DIR)/executor/executor_commands.c \
+       $(SRC_DIR)/executor/executor_external.c \
        $(SRC_DIR)/executor/executor_path.c \
        $(SRC_DIR)/executor/executor_child_fds.c \
        $(SRC_DIR)/executor/executor_child_run.c \
@@ -68,8 +70,12 @@ SRCS = main.c \
        $(SRC_DIR)/executor/executor_pipeline_run.c \
        $(SRC_DIR)/executor/executor_pipeline_utils.c \
        $(SRC_DIR)/executor/executor_pipeline.c \
-       $(SRC_DIR)/executor/executor_redirections.c \
        $(SRC_DIR)/executor/executor_error.c \
+       $(SRC_DIR)/executor/executor_path_search.c \
+       $(SRC_DIR)/executor/executor_path_utils.c \
+       $(SRC_DIR)/executor/executor_redir_heredoc.c \
+       $(SRC_DIR)/executor/executor_redir_io.c \
+       $(SRC_DIR)/executor/executor_redirections.c \
        $(SRC_DIR)/lexer/lexer.c \
        $(SRC_DIR)/lexer/lexer_utils.c \
        $(SRC_DIR)/lexer/lexer_operator.c \
@@ -87,6 +93,7 @@ SRCS = main.c \
        $(SRC_DIR)/history/history.c \
        $(SRC_DIR)/history/builtin_history.c \
        $(SRC_DIR)/core/reader.c \
+       $(SRC_DIR)/core/read_logical_line.c \
        minishell_logo.c
 
 # Object files

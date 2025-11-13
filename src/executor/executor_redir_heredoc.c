@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   executor_redirections.c                            :+:      :+:    :+:   */
+/*   executor_redir_heredoc.c                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,26 +12,47 @@
 
 #include "minishell.h"
 
-static int	process_single_redirection(t_redir *redir)
+static int	process_heredoc_line(char *delimiter, int pipe_fd[2])
 {
-	if (redir->type == TOKEN_REDIR_IN)
-		return (handle_input(redir->file));
-	else if (redir->type == TOKEN_REDIR_OUT)
-		return (handle_output(redir->file, 0));
-	else if (redir->type == TOKEN_REDIR_APPEND)
-		return (handle_output(redir->file, 1));
-	else if (redir->type == TOKEN_REDIR_HEREDOC)
-		return (handle_heredoc(redir->file));
+	char	*line;
+	char	*expanded;
+
+	while (1)
+	{
+		line = readline("> ");
+		if (!line || ft_strcmp(line, delimiter) == 0)
+		{
+			free(line);
+			break ;
+		}
+		expanded = expand_variables(line, g_shell.env, g_shell.exit_status);
+		if (!expanded)
+		{
+			free(line);
+			return (-1);
+		}
+		write(pipe_fd[1], expanded, ft_strlen(expanded));
+		write(pipe_fd[1], "\n", 1);
+		free(line);
+		free(expanded);
+	}
 	return (0);
 }
 
-int	setup_redirections(t_redir *redirs)
+int	handle_heredoc(char *delimiter)
 {
-	while (redirs)
+	int	pipe_fd[2];
+
+	if (pipe(pipe_fd) == -1)
+		return (-1);
+	if (process_heredoc_line(delimiter, pipe_fd) == -1)
 	{
-		if (process_single_redirection(redirs) == -1)
-			return (-1);
-		redirs = redirs->next;
+		close(pipe_fd[1]);
+		close(pipe_fd[0]);
+		return (-1);
 	}
+	close(pipe_fd[1]);
+	dup2(pipe_fd[0], STDIN_FILENO);
+	close(pipe_fd[0]);
 	return (0);
 }
