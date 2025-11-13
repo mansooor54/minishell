@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/13 14:58:47 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 15:08:35 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,86 +26,75 @@ static size_t count_trailing_backslashes(const char *s, size_t i)
 */
 
 /* outside quotes: continue ONLY if an odd number of trailing '\' */
-static int trailing_backslash_needs_more(const char *s)
+/* Return 1 if line ends with a backslash outside quotes → needs continuation */
+static int	trailing_backslash_needs_more(const char *s)
 {
-	size_t i;
-	int    backslashes;
-	char   in_quote = 0;
-	int    escaped = 0;
+	size_t	i;
+	char	in_quote;
+	int		escaped;
 
 	if (!s || !*s)
-		return 0;
-
-	/* single pass to see if we end inside a quote */
-	for (i = 0; s[i]; )
+		return (0);
+	i = 0;
+	in_quote = 0;
+	escaped = 0;
+	while (s[i] != '\0')
 	{
 		if (!in_quote && (s[i] == '\'' || s[i] == '"'))
 		{
-			in_quote = s[i++];
+			in_quote = s[i];
 			escaped = 0;
-			continue;
 		}
-		if (in_quote)
+		else if (in_quote)
 		{
 			if (s[i] == in_quote && !escaped)
-			{
 				in_quote = 0;
-				i++;
-				continue;
-			}
-			escaped = (in_quote == '"' && s[i] == '\\' && !escaped);
-			i++;
-			continue;
-		}
-		/* outside quotes: skip escaped char pairs */
-		if (s[i] == '\\')
-		{
-			if (s[i + 1] != '\0') i += 2;
-			else i++;
-			continue;
+			if (in_quote == '"' && s[i] == '\\' && !escaped)
+				escaped = 1;
+			else
+				escaped = 0;
 		}
 		i++;
 	}
 	if (in_quote)
-		return 1;
-
-	/* count consecutive trailing backslashes ignoring spaces/tabs */
+		return (1);
 	i = ft_strlen(s);
 	while (i > 0 && (s[i - 1] == ' ' || s[i - 1] == '\t'))
 		i--;
-	backslashes = 0;
-	while (i > 0 && s[i - 1] == '\\')
-	{
-		backslashes++;
-		i--;
-	}
-	return (backslashes % 2) == 1; /* continue only if odd */
+	if (i == 0)
+		return (0);
+	if (s[i - 1] == '\\')
+		return (1);
+	return (0);
 }
 
-static int needs_continuation(const char *s)
+static int	needs_continuation(const char *s)
 {
 	if (has_unclosed_quotes((char *)s))
-		return 1;
-	return trailing_backslash_needs_more(s);
+		return (1);
+	return (trailing_backslash_needs_more(s));
 }
 
-/* remove exactly ONE trailing '\' when continuing, then concatenate */
-static char *join_continuation(char *line, char *next)
+/* Remove one trailing '\' (if any), then append the next line */
+static char	*join_continuation(char *line, char *next)
 {
-	size_t len;
-	char   *tmp;
-	char   *nptr = next ? next : "";
+	size_t	len;
+	char	*tmp;
+	char	*nptr;
 
+	nptr = next;
+	if (!nptr)
+		nptr = "";
 	if (!line)
-		return ft_strdup(nptr);
+		return (ft_strdup(nptr));
 	len = ft_strlen(line);
-	while (len && (line[len - 1] == ' ' || line[len - 1] == '\t'))
+	while (len > 0 && (line[len - 1] == ' ' || line[len - 1] == '\t'))
 		len--;
-	if (len && line[len - 1] == '\\')
+	if (len > 0 && line[len - 1] == '\\')
 		line[len - 1] = '\0';
 	tmp = ft_strjoin(line, nptr);
 	free(line);
-	return tmp;
+	return (tmp);
 }
 
 /*
@@ -125,12 +114,11 @@ char	*read_logical_line(void)
 		more = readline("> ");
 		if (!more)
 		{
-			/* EOF during continuation: cancel whole logical line */
+			/* Ctrl-D or EOF during continuation → cancel whole command */
 			free(line);
 			return (NULL);
 		}
-		/* Ctrl-C on continuation: handler sets exit_status = 130,
-		   readline usually returns empty string "" */
+		/* Ctrl-C: handler sets exit_status = 130; readline returns "" */
 		if (g_shell.exit_status == 130 && more[0] == '\0')
 		{
 			free(more);

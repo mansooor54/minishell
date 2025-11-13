@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/13 14:46:49 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 15:04:45 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,10 +64,13 @@ void	shell_loop(t_shell *shell)
 
 	while (!shell->should_exit)
 	{
-		//line = readline("\033[1;33mminishell> \033[0m");
 		line = read_logical_line();
 		if (!line)
 		{
+			/* Ctrl-C: exit_status set to 130 → just show new prompt */
+			if (shell->exit_status == 130)
+				continue;
+			/* Real EOF (Ctrl-D): exit minishell like bash */
 			ft_putendl_fd("exit", 1);
 			break ;
 		}
