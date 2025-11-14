@@ -12,13 +12,11 @@
 
 #include "../../minishell.h"
 
-/* Helper: check if a character is a quote (for quote removal) */
 static int	is_quote(char ch)
 {
 	return (ch == '\'' || ch == '"');
 }
 
-/* Helper: handle quote removal logic */
 static int	handle_quote(t_quote_ctx *c, char *s)
 {
 	if (!c->quote && is_quote(s[c->i]))
@@ -41,16 +39,16 @@ static int	handle_bs_outside(t_quote_ctx *c, char *s)
 		return (0);
 	if (s[c->i + 1] == '\n')
 	{
-		c->i += 2;                 /* remove backslash-newline */
+		c->i += 2;
 		return (1);
 	}
 	if (s[c->i + 1] == '\0')
 	{
-		c->res[c->j++] = '\\';     /* PRESERVE trailing '\' */
+		c->res[c->j++] = '\\';
 		c->i += 1;
 		return (1);
 	}
-	c->res[c->j++] = s[c->i + 1];  /* unescape next char */
+	c->res[c->j++] = s[c->i + 1];
 	c->i += 2;
 	return (1);
 }

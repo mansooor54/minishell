@@ -1,3 +1,13 @@
+```bash
+
+# 14-11-2025
+    - fix signal handling in heredoc
+    - fix memory leaks in heredoc
+    - Norminette Ok
+    - bash-3.2$ cat << EOF
+    - remove semicolon operator test
+```
+```bash
 # 12-11-2025
     - update Parser folder and Makefile
     - Norminette Ok
@@ -142,3 +152,6 @@ You should now see only a new line and a fresh
         cat << EOF
         line $HOME
         EOF
+
+
+```

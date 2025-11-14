@@ -1,33 +1,33 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   lexer_operator.c                                   :+:      :+:    :+:   */
+/*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 15:03:10 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/13 15:04:45 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
-/*
-** Identify and create operator token
-** Handles |, ||, &&, <, <<, >, >>
-*/
-t_token	*get_operator_token(char **input)
+t_shell	g_shell;
+
+int	main(int argc, char **argv, char **envp)
 {
-	t_token		*tok;
-
-	tok = try_or_pipe(input);
-	if (tok)
-		return (tok);
-	tok = try_and(input);
-	if (tok)
-		return (tok);
-	tok = try_inredir(input);
-	if (tok)
-		return (tok);
-	return (try_outredir(input));
+	(void)argc;
+	(void)argv;
+	write(1, "\033[2J\033[H", 7);
+	print_logo();
+	init_shell(&g_shell, envp);
+	setup_signals();
+	init_terminal();
+	history_init(&g_shell);
+	shell_loop(&g_shell);	
+	history_save(&g_shell);
+	rl_clear_history();
+	free_env(g_shell.env);
+	free(g_shell.history_path);
+	return (g_shell.exit_status);
 }

@@ -12,8 +12,6 @@
 
 #include "../../minishell.h"
 
-static char	*g_hist = NULL;
-
 static int	is_blank(const char *s)
 {
 	int	i;
@@ -43,12 +41,12 @@ static char	*history_path_from_env(t_env *env)
 	return (p);
 }
 
-int	history_init(t_env *env)
+int	history_init(t_shell *shell)
 {
-	g_hist = history_path_from_env(env);
-	if (!g_hist)
+	shell->history_path = history_path_from_env(shell->env);
+	if (!shell->history_path)
 		return (0);
-	read_history(g_hist);
+	read_history(shell->history_path);
 	stifle_history(1000);
 	return (1);
 }
@@ -66,9 +64,9 @@ void	history_add_line(const char *line)
 		add_history((char *)line);
 }
 
-void	history_save(void)
+void	history_save(t_shell *shell)
 {
-	if (!g_hist)
+	if (!shell->history_path)
 		return ;
-	write_history(g_hist);
+	write_history(shell->history_path);
 }

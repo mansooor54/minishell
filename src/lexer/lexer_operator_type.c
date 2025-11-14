@@ -12,16 +12,6 @@
 
 #include "../../minishell.h"
 
-t_token	*try_semicolon(char **input)
-{
-	if (**input == ';')
-	{
-		(*input)++;
-		return (create_token(TOKEN_SEMI, ";"));
-	}
-	return (NULL);
-}
-
 t_token	*try_or_pipe(char **input)
 {
 	if (**input != '|')

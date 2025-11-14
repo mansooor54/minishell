@@ -61,62 +61,6 @@ static int	measure_word(char *s)
 	return (i);
 }
 
-// /* Collapse escapes outside quotes:  \\x -> \x,  \\ -> \  */
-// static char *unescape_outside_quotes(const char *s)
-// {
-// 	int   i = 0, j = 0;
-// 	char  inq = 0;
-// 	char *out = malloc(ft_strlen(s) + 1);
-
-// 	if (!out) return NULL;
-// 	while (s[i])
-// 	{
-// 		if (!inq && (s[i] == '\'' || s[i] == '"'))
-// 		{
-// 			inq = s[i++];
-// 			continue;                 /* remove quote chars */
-// 		}
-// 		if (inq && s[i] == inq)      /* closing quote */
-// 		{
-// 			inq = 0;
-// 			i++;
-// 			continue;                 /* remove quote chars */
-// 		}
-// 		if (!inq && s[i] == '\\' && s[i + 1] != '\0')
-// 		{
-// 			out[j++] = s[i + 1];     /* eat the backslash, keep next char */
-// 			i += 2;
-// 			continue;
-// 		}
-// 		out[j++] = s[i++];
-// 	}
-// 	out[j] = '\0';
-// 	return out;
-// }
-
-/* alloc + copy */
-// int	extract_word(char *input, char **word)
-// {
-// 	int   len;
-// 	char *raw;
-// 	char *un;
-
-// 	len = measure_word(input);                                /* scans span */
-// 	raw = malloc((size_t)len + 1);
-// 	if (!raw)
-// 		return 0;
-// 	ft_strncpy(raw, input, len);
-// 	raw[len] = '\0';
-
-// 	un = unescape_outside_quotes(raw);                        /* NEW */
-// 	free(raw);
-// 	if (!un)
-// 		return 0;
-
-// 	*word = un;
-// 	return len;                                              /* advance input */
-// }
-
 int	extract_word(char *input, char **word)
 {
 	int	len;

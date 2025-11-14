@@ -40,7 +40,11 @@ LIBFT = $(LIBFT_DIR)/libft.a
 
 # Source files
 SRC_DIR = src
-SRCS = main.c \
+SRCS = $(SRC_DIR)/main.c \
+       $(SRC_DIR)/core/shell_loop.c \
+       $(SRC_DIR)/core/shell_utils.c \
+       $(SRC_DIR)/core/reader.c \
+       $(SRC_DIR)/core/read_logical_line.c \
        $(SRC_DIR)/builtins/builtins.c \
        $(SRC_DIR)/builtins/builtin_echo.c \
        $(SRC_DIR)/builtins/builtin_cd.c \
@@ -61,6 +65,7 @@ SRCS = main.c \
        $(SRC_DIR)/expander/expander_vars.c \
        $(SRC_DIR)/expander/expander.c \
        $(SRC_DIR)/executor/executor.c \
+       $(SRC_DIR)/executor/executor_utils.c \
        $(SRC_DIR)/executor/executor_commands.c \
        $(SRC_DIR)/executor/executor_external.c \
        $(SRC_DIR)/executor/executor_path.c \
@@ -92,8 +97,6 @@ SRCS = main.c \
        $(SRC_DIR)/signals/signals.c \
        $(SRC_DIR)/history/history.c \
        $(SRC_DIR)/history/builtin_history.c \
-       $(SRC_DIR)/core/reader.c \
-       $(SRC_DIR)/core/read_logical_line.c \
        minishell_logo.c
 
 # Object files

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 int	tok_op_len(t_token *t)
 {
@@ -23,11 +23,6 @@ int	tok_op_len(t_token *t)
 	return (0);
 }
 
-/* print_unexpected is now in parser_error.c */
-
-/* replace only the '<' branch inside print_run_error(...) */
-/* line 43: counts 1 for '<', 2 for '<<' */
-/* line 56: return total >= 6 */
 static void	handle_lt_run(t_token *t)
 {
 	int			total;
@@ -49,8 +44,6 @@ static void	handle_lt_run(t_token *t)
 	return (print_unexpected("<<<"));
 }
 
-/* choose correct unexpected token for runs like >>>> or <<<< */
-/* line 75: >>>, >>>> → `>>' */
 void	print_run_error(t_token *t)
 {
 	int			total;
@@ -78,18 +71,11 @@ void	print_run_error(t_token *t)
 		return (handle_lt_run(t));
 }
 
-/* replace your redir branch with this */
 void	print_syntax_error(t_token *token)
 {
 	if (!token)
 	{
 		print_unexpected("newline");
-		return ;
-	}
-	else if (token->type == TOKEN_SEMI)
-	{
-		ft_putendl_fd(ERR_SEMI, 2);
-		ft_putstr_fd("minishell: syntax error near unexpected token `;'\n", 2);
 		return ;
 	}
 	else if (is_redirection(token) && is_redirection(token->next))
