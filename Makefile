@@ -97,7 +97,7 @@ SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/signals/signals.c \
        $(SRC_DIR)/history/history.c \
        $(SRC_DIR)/history/builtin_history.c \
-       minishell_logo.c
+       $(SRC_DIR)/minishell_logo.c
 
 # Object files
 OBJ_DIR = obj

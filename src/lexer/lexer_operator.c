@@ -10,12 +10,23 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 /*
 ** Identify and create operator token
 ** Handles |, ||, &&, <, <<, >, >>
 */
+
+static t_token	*try_semicolon(char **input)
+{
+	if (**input == ';')
+	{
+		(*input)++;
+		return (create_token(TOKEN_SEMICOLON, ";"));
+	}
+	return (NULL);
+}
+
 t_token	*get_operator_token(char **input)
 {
 	t_token		*tok;
@@ -24,6 +35,9 @@ t_token	*get_operator_token(char **input)
 	if (tok)
 		return (tok);
 	tok = try_and(input);
+	if (tok)
+		return (tok);
+	tok = try_semicolon(input);
 	if (tok)
 		return (tok);
 	tok = try_inredir(input);

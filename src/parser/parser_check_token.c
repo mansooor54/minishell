@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 /* Token validation functions */
 int	is_valid_word(t_token *token)
 {

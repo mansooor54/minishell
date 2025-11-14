@@ -30,10 +30,10 @@ This project implements a basic Unix shell that can:
 └── libft/                      # Custom C library
 ```
 
-# compine all files in one:
-cat src/lexer/*.c src/parser/*.c src/executor/*.c src/builtins/*.c src/core/*.c src/environment/*.c src/expander/*.c src/history/*.c src/signals/*.c src/utils/*.c main.c minishell.h > minishell_update.c
+### compine all files in one:
+cat src/lexer/*.c src/parser/*.c src/executor/*.c src/builtins/*.c src/core/*.c src/environment/*.c src/expander/*.c src/history/*.c src/signals/*.c src/utils/*.c main.c minishell_logo.c > minishell_all_code.c
 
-# Remove repeat include:
+### Remove repeat include:
 grep -h '^#include' src/**/*.c | sort -u > tmp_includes.h\ngrep -hv '^#include' libft/*.c >> tmp_includes.h\nmv tmp_includes.h merged_libft_small.c\n
 
 ## Compilation
@@ -261,6 +261,23 @@ Syntax error OR waiting for closing quote (your choice, must not execute partial
 \ls
 ;
 echo hi\there
+
+# Semicolon
+minishell> ;
+minishell: syntax error near unexpected token `;'
+
+minishell> echo hi ;
+minishell: syntax error near unexpected token `;'
+
+minishell> echo hi ;; echo bye
+minishell: syntax error near unexpected token `;'
+
+minishell> echo hi ; echo bye
+hi
+bye
+
+minishell> echo hi ; && echo bye
+minishell: syntax error near unexpected token `&&'
 
 
 Expected:

@@ -12,83 +12,17 @@
 
 #include "minishell.h"
 
-int	tok_op_len(t_token *t)
+/* First function: Handle simple token type errors */
+static void	print_token_type_error(t_token *token)
 {
-	if (!t)
-		return (0);
-	if (t->type == TOKEN_REDIR_APPEND || t->type == TOKEN_REDIR_HEREDOC)
-		return (2);
-	if (t->type == TOKEN_REDIR_OUT || t->type == TOKEN_REDIR_IN)
-		return (1);
-	return (0);
-}
-
-static void	handle_lt_run(t_token *t)
-{
-	int			total;
-	t_token		*cur;
-
-	total = 0;
-	cur = t;
-	while (is_lt(cur))
-	{
-		total += tok_op_len(cur);
-		cur = cur->next;
-	}
-	if (total <= 3)
-		return (print_unexpected("newline"));
-	if (total == 4)
-		return (print_unexpected("<"));
-	if (total == 5)
-		return (print_unexpected("<<"));
-	return (print_unexpected("<<<"));
-}
-
-void	print_run_error(t_token *t)
-{
-	int			total;
-	t_token		*cur;
-
-	total = 0;
-	cur = t;
-	if (is_gt(t))
-	{
-		while (is_gt(cur))
-		{
-			total += tok_op_len(cur);
-			cur = cur->next;
-		}
-		if (total > 3)
-			ft_putendl_fd(ERR_REDIR_APPEND, 2);
-		else if (total == 2 && (!cur || is_control_operator(cur)
-				|| is_redirection(cur)))
-			ft_putendl_fd(ERR_NEWLINE, 2);
-		else
-			ft_putendl_fd(ERR_CONSECUTIVE_REDIR, 2);
-		return ;
-	}
-	if (is_lt(t))
-		return (handle_lt_run(t));
-}
-
-void	print_syntax_error(t_token *token)
-{
-	if (!token)
-	{
-		print_unexpected("newline");
-		return ;
-	}
-	else if (is_redirection(token) && is_redirection(token->next))
-	{
-		print_run_error(token);
-		return ;
-	}
-	else if (token->type == TOKEN_PIPE)
+	if (token->type == TOKEN_PIPE)
 		ft_putendl_fd(ERR_PIPE, 2);
 	else if (token->type == TOKEN_AND)
 		ft_putendl_fd(ERR_AND, 2);
 	else if (token->type == TOKEN_OR)
 		ft_putendl_fd(ERR_OR, 2);
+	else if (token->type == TOKEN_SEMICOLON)
+		ft_putendl_fd(ERR_SEMICOLON, 2);
 	else if (token->type == TOKEN_REDIR_IN)
 		ft_putendl_fd(ERR_REDIR_IN, 2);
 	else if (token->type == TOKEN_REDIR_OUT)
@@ -97,4 +31,24 @@ void	print_syntax_error(t_token *token)
 		ft_putendl_fd(ERR_REDIR_APPEND, 2);
 	else if (token->type == TOKEN_REDIR_HEREDOC)
 		ft_putendl_fd(ERR_REDIR_HEREDOC, 2);
+}
+
+/* Second function: Handle special logic cases */
+static void	handle_special_error_cases(t_token *token)
+{
+	if (!token)
+	{
+		print_unexpected("newline");
+		return ;
+	}
+	if (is_redirection(token) && token->next && is_redirection(token->next))
+		print_run_error(token);
+	else
+		print_token_type_error(token);
+}
+
+/* Main function */
+void	print_syntax_error(t_token *token)
+{
+	handle_special_error_cases(token);
 }

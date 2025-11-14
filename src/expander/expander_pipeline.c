@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 void	expand_redirections(t_redir *redir, t_env *env, int exit_status)
 {

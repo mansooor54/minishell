@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 /* forward decl only; real body is in expander_utils.c */
 void	process_dollar(t_exp_ctx *c);

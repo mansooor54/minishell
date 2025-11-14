@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 /*
 ** Create a new pipeline node
@@ -33,7 +33,7 @@ static t_pipeline	*create_pipeline(void)
 ** Parse commands separated by pipes
 ** Builds a linked list of commands in a single pipeline
 */
-static t_cmd	*parse_pipe_sequence(t_token **tokens)
+t_cmd	*parse_pipe_sequence(t_token **tokens)
 {
 	t_cmd	*cmds;
 	t_cmd	*new_cmd;
@@ -41,7 +41,8 @@ static t_cmd	*parse_pipe_sequence(t_token **tokens)
 
 	cmds = NULL;
 	while (*tokens && (*tokens)->type != TOKEN_AND
-		&& (*tokens)->type != TOKEN_OR)
+		&& (*tokens)->type != TOKEN_OR
+		&& (*tokens)->type != TOKEN_SEMICOLON)
 	{
 		new_cmd = parse_command(tokens);
 		if (!cmds)
@@ -80,11 +81,13 @@ static void	append_pipeline(t_pipeline **head, t_pipeline *new_node)
 }
 
 /* helpers */
-static void	set_logic_and_advance(t_pipeline *pl, t_token **tokens)
+void	set_logic_and_advance(t_pipeline *pl, t_token **tokens)
 {
 	if (!tokens || !*tokens)
 		return ;
-	if ((*tokens)->type == TOKEN_AND || (*tokens)->type == TOKEN_OR)
+	if ((*tokens)->type == TOKEN_AND
+		|| (*tokens)->type == TOKEN_OR
+		|| (*tokens)->type == TOKEN_SEMICOLON)
 	{
 		pl->logic_op = (*tokens)->type;
 		*tokens = (*tokens)->next;
@@ -99,12 +102,18 @@ t_pipeline	*parser(t_token *tokens)
 	head = NULL;
 	while (tokens)
 	{
+		while (tokens && tokens->type == TOKEN_SEMICOLON)
+			tokens = tokens->next;
+		if (!tokens || tokens->type == TOKEN_EOF)
+			break ;
 		node = create_pipeline();
 		node->cmds = parse_pipe_sequence(&tokens);
 		set_logic_and_advance(node, &tokens);
 		append_pipeline(&head, node);
 		if (!tokens || tokens->type == TOKEN_EOF)
 			break ;
+		if (tokens->type == TOKEN_SEMICOLON)
+			tokens = tokens->next;
 	}
 	return (head);
 }

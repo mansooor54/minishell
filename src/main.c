@@ -24,7 +24,7 @@ int	main(int argc, char **argv, char **envp)
 	setup_signals();
 	init_terminal();
 	history_init(&g_shell);
-	shell_loop(&g_shell);	
+	shell_loop(&g_shell);
 	history_save(&g_shell);
 	rl_clear_history();
 	free_env(g_shell.env);

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 /* return heap string; never NULL, returns "" if src is NULL */
 static char	*safe_strdup_or_empty(const char *src)

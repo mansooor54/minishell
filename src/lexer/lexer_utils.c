@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 int	is_whitespace(char c)
 {
@@ -19,7 +19,19 @@ int	is_whitespace(char c)
 
 int	is_operator(char c)
 {
-	return (c == '|' || c == '<' || c == '>' || c == '&');
+	if (!c)
+		return (0);
+	if (c == '|')
+		return (1);
+	if (c == '>')
+		return (1);
+	if (c == '<')
+		return (1);
+	if (c == '&')
+		return (1);
+	if (c == ';')
+		return (1);
+	return (0);
 }
 
 static int	is_word_cont(char *s, int i, int in_quote)

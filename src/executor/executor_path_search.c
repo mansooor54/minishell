@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "minishell.h"
 
 /* try dir/cmd and return full if executable */
 static char	*probe_dir_for_cmd(const char *dir, const char *cmd)

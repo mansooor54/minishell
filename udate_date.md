@@ -1,4 +1,7 @@
 ```bash
+# 15-11-2025
+    - Norminette Ok
+    - Semicolone works
 
 # 14-11-2025
     - fix signal handling in heredoc
@@ -13,10 +16,11 @@
     - Norminette Ok
     - bash-3.2$ ;
     - bash: syntax error near unexpected token `;'
-    - bash-3.2$ \\
+    - bash-3.2$ \\ 
     - bash: \: command not found
 
 # 13-11-2025
+
 /*
 ** This function:
 ** ^C is printed by the terminal itself (ECHOCTL), not by your handle_sigint.
