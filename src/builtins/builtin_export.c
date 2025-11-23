@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 /*
 ** Parse KEY=VALUE format
@@ -37,28 +37,6 @@ static void	parse_export_arg(char *arg, char **key, char **value)
 ** Update or add environment variable
 ** If key exists, update value; otherwise create new node
 */
-static void	update_or_add_env(t_env **env, char *key, char *value)
-{
-	t_env	*current;
-	t_env	*new_node;
-
-	current = *env;
-	while (current)
-	{
-		if (ft_strcmp(current->key, key) == 0)
-		{
-			if (value)
-			{
-				free(current->value);
-				current->value = ft_strdup(value);
-			}
-			return ;
-		}
-		current = current->next;
-	}
-	new_node = create_env_node(key, value);
-	add_env_node(env, new_node);
-}
 
 /*
 ** Export builtin command
@@ -77,7 +55,16 @@ int	builtin_export(char **args, t_env **env)
 	while (args[i])
 	{
 		parse_export_arg(args[i], &key, &value);
-		update_or_add_env(env, key, value);
+		if (!is_valid_identifier(key))
+		{
+			ft_putstr_fd("minishell: export: `", 2);
+			ft_putstr_fd(key, 2);
+			ft_putstr_fd("': not a valid identifier\n", 2);
+			free(key);
+			free(value);
+			return (1);
+		}
+		env_set_value(env, key, value);
 		free(key);
 		free(value);
 		i++;

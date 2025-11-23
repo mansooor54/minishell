@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 static t_redir	*parse_single_redirection(t_token **tokens)
 {
@@ -43,19 +43,21 @@ static int	count_args(t_token *tokens)
 	int	count;
 
 	count = 0;
-	while (tokens && tokens->type == TOKEN_WORD)
+	while (tokens && (tokens->type == TOKEN_WORD
+			|| tokens->type == TOKEN_REDIR_IN
+			|| tokens->type == TOKEN_REDIR_OUT
+			|| tokens->type == TOKEN_REDIR_APPEND
+			|| tokens->type == TOKEN_REDIR_HEREDOC))
 	{
-		count++;
-		tokens = tokens->next;
-		while (tokens && (tokens->type == TOKEN_REDIR_IN
-				|| tokens->type == TOKEN_REDIR_OUT
-				|| tokens->type == TOKEN_REDIR_APPEND
-				|| tokens->type == TOKEN_REDIR_HEREDOC))
+		if (tokens->type == TOKEN_WORD)
 		{
-			if (!tokens->next)
-				return (count);
-			tokens = tokens->next->next;
+			count++;
+			tokens = tokens->next;
 		}
+		else if (tokens->next)
+			tokens = tokens->next->next;
+		else
+			break ;
 	}
 	return (count);
 }
@@ -108,6 +110,7 @@ t_cmd	*parse_command(t_token **tokens)
 	if (!cmd)
 		return (NULL);
 	i = 0;
+	consume_redirs(tokens, cmd);
 	while (*tokens && (*tokens)->type == TOKEN_WORD)
 	{
 		cmd->args[i++] = ft_strdup((*tokens)->value);

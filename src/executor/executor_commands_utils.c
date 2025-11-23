@@ -1,32 +1,39 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   builtin_history.c                                  :+:      :+:    :+:   */
+/*   executor_commands_utils.c                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 14:33:12 by malmarzo         ###   ########.fr       */
+/*   Created: 2025/11/23 00:00:00 by malmarzo          #+#    #+#             */
+/*   Updated: 2025/11/23 00:00:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-int	builtin_history(char **args)
+void	perror_with_cmd(const char *cmd)
 {
-	HIST_ENTRY	**list;
-	int			i;
+	if (!cmd)
+		return ;
+	write(2, "minishell: ", 11);
+	write(2, cmd, ft_strlen(cmd));
+	write(2, ": ", 2);
+	write(2, strerror(errno), ft_strlen(strerror(errno)));
+	write(2, "\n", 1);
+}
 
-	(void)args;
-	list = history_list();
-	if (!list)
+int	has_slash(const char *s)
+{
+	int	i;
+
+	if (!s)
 		return (0);
 	i = 0;
-	while (list[i])
+	while (s[i] != '\0')
 	{
-		ft_putnbr_fd(i + 1, 1);
-		ft_putstr_fd("  ", 1);
-		ft_putendl_fd(list[i]->line, 1);
+		if (s[i] == '/')
+			return (1);
 		i++;
 	}
 	return (0);

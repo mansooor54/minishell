@@ -10,8 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
+#include "../../minishell.h"
 /*
 ** execute_pipeline_loop - Main loop for pipeline execution
 **
@@ -61,7 +60,11 @@ static int	execute_multi_pipeline(t_cmd *cmds, t_shell *shell, int count)
 		free(pids);
 		return (1);
 	}
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
 	ret = wait_for_children(pids, count);
+	signal(SIGINT, handle_sigint);
+	signal(SIGQUIT, handle_sigquit);
 	free(pids);
 	shell->exit_status = ret;
 	return (ret);

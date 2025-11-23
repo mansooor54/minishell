@@ -1,97 +1,67 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   reader.c                                           :+:      :+:    :+:   */
+/*   read_logical_line.c                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/13 15:08:35 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/20 21:00:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
-/*
-** \001 and \002 are control characters (SOH and STX).
-** Readline uses them to know “this part does not take cursor space”.
-** \001 and \002: tell readline that the color codes don't take cursor space
-*/
-static char	*read_initial_line(void)
+/* ************************************************************************** */
+/*                         2.  READ ONE LINE SAFELY                           */
+/* ************************************************************************** */
+
+static char	*read_one_line(const char *prompt)
 {
 	char	*line;
 
 	g_shell.sigint_during_read = 0;
-	line = readline("\001\033[1;33m\002minishell> \001\033[0m\002");
-	if (!line)
-		return (NULL);
+	rl_done = 0;
+	line = readline(prompt);
 	if (g_shell.sigint_during_read)
 	{
-		free(line);
-		g_shell.exit_status = 130;
+		if (line)
+			free(line);
 		return (NULL);
 	}
 	return (line);
 }
 
-static char	*handle_continuation_line(char *line)
+/* ************************************************************************** */
+/*                     3.  FULL BASH-LIKE LOGICAL LINE READER                 */
+/* ************************************************************************** */
+
+static char	*handle_continuation_error(char *line)
 {
-	char	*more;
-
-	g_shell.sigint_during_read = 0;
-	more = readline("> ");
-	if (g_shell.sigint_during_read)
-	{
-		if (more)
-			free(more);
-		free(line);
-		return (NULL);
-	}
-	if (!more)
-	{
-		free(line);
-		return (NULL);
-	}
-	return (more);
-}
-
-char	*join_continuation(char *line, char *next)
-{
-	size_t	len;
-	char	*tmp;
-	char	*nptr;
-
-	nptr = next;
-	if (!nptr)
-		nptr = "";
-	if (!line)
-		return (ft_strdup(nptr));
-	len = ft_strlen(line);
-	while (len > 0 && (line[len - 1] == ' ' || line[len - 1] == '\t'))
-		len--;
-	if (len > 0 && line[len - 1] == '\\')
-		line[len - 1] = '\0';
-	tmp = ft_strjoin(line, nptr);
 	free(line);
-	return (tmp);
+	ft_putendl_fd("minishell: syntax error: unexpected end of file", 2);
+	g_shell.exit_status = 258;
+	return (ft_strdup(""));
 }
 
 static char	*process_continuation(char *line)
 {
 	char	*more;
-	char	*new_line;
 
-	while (needs_continuation(line))
+	g_shell.in_continuation = 1;
+	more = read_one_line("> ");
+	g_shell.in_continuation = 0;
+	if (g_shell.sigint_during_read)
 	{
-		more = handle_continuation_line(line);
-		if (!more)
-			return (NULL);
-		new_line = join_continuation(line, more);
-		free(more);
-		if (!new_line)
-			return (NULL);
-		line = new_line;
+		free(line);
+		if (more)
+			free(more);
+		return (NULL);
 	}
+	if (!more)
+		return (handle_continuation_error(line));
+	line = join_continuation(line, more);
+	free(more);
 	return (line);
 }
 
@@ -99,9 +69,16 @@ char	*read_logical_line(void)
 {
 	char	*line;
 
-	line = read_initial_line();
+	line = read_one_line("\001\033[1;33m\002minishell> \001\033[0m\002");
 	if (!line)
 		return (NULL);
-	line = process_continuation(line);
+	while (needs_continuation(line))
+	{
+		line = process_continuation(line);
+		if (!line)
+			return (NULL);
+		if (!*line && g_shell.exit_status == 258)
+			return (line);
+	}
 	return (line);
 }

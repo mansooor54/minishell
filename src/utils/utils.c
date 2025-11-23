@@ -10,8 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
+#include "../../minishell.h"
 /*
 ** Free array of strings
 ** Frees each string and the array itself
@@ -74,4 +73,30 @@ void	free_env(t_env *env)
 		free(tmp->value);
 		free(tmp);
 	}
+}
+
+int	is_valid_identifier(char *s)
+{
+	int	i;
+
+	if (!s || !(ft_isalpha((unsigned char)s[0]) || s[0] == '_'))
+		return (0);
+	i = 1;
+	while (s[i])
+	{
+		if (!(ft_isalnum((unsigned char)s[i]) || s[i] == '_'))
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
+/*
+** return heap string; never NULL, returns "" if src is NULL
+*/
+char	*safe_strdup_or_empty(const char *src)
+{
+	if (src == NULL)
+		return (ft_strdup(""));
+	return (ft_strdup((char *)src));
 }

@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   shell.c                                            :+:      :+:    :+:   */
+/*   shell_loop.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,18 +10,22 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
-static int	handle_empty_line(char *line, t_shell *shell)
+static int	handle_eof_and_sigint(t_shell *shell, char *line)
 {
+	if (!line && g_shell.sigint_during_read)
+	{
+		g_shell.sigint_during_read = 0;
+		return (1);
+	}
 	if (!line)
 	{
-		if (shell->exit_status == 130)
-			return (1);
-		ft_putendl_fd("exit", 1);
-		return (0);
+		if (shell->interactive)
+			ft_putendl_fd("exit", 1);
+		return (2);
 	}
-	return (2);
+	return (0);
 }
 
 void	shell_loop(t_shell *shell)
@@ -31,18 +35,23 @@ void	shell_loop(t_shell *shell)
 
 	while (!shell->should_exit)
 	{
-		line = read_logical_line();
-		status = handle_empty_line(line, shell);
-		if (status == 0)
-			break ;
+		if (!g_shell.in_heredoc)
+			setup_signals();
+		if (shell->interactive)
+			line = read_logical_line();
+		else
+			line = readline("");
+		status = handle_eof_and_sigint(shell, line);
 		if (status == 1)
 			continue ;
+		if (status == 2)
+			break ;
 		if (*line && !is_all_space(line))
 		{
-			history_add_line(line);
+			if (shell->interactive)
+				history_add_line(line);
 			process_line(line, shell);
 		}
 		free(line);
 	}
-	history_save(shell);
 }

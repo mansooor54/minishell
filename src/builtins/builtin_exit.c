@@ -10,61 +10,19 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
-static int	parse_sign(const char *s, int *i)
-{
-	int	sign;
-
-	sign = 1;
-	if (s[*i] == '+' || s[*i] == '-')
-	{
-		if (s[*i] == '-')
-			sign = -1;
-		(*i)++;
-	}
-	return (sign);
-}
-
-static int	parse_digits(const char *s, int *i, long long *val)
-{
-	long long	v;
-	int			j;
-
-	j = *i;
-	if (!ft_isdigit((unsigned char)s[j]))
-		return (0);
-	v = 0;
-	while (ft_isdigit((unsigned char)s[j]))
-	{
-		v = v * 10 + (s[j] - '0');
-		j++;
-	}
-	*i = j;
-	*val = v;
-	return (1);
-}
+#include "../../minishell.h"
 
 /*
 ** Check if string is a valid number
 ** Returns 1 if numeric, 0 otherwise
 */
-static int	is_numeric_ll(const char *s, long long *out)
-{
-	long long	val;
-	int			sign;
-	int			i;
 
-	if (!s || !*s)
-		return (0);
-	i = 0;
-	sign = parse_sign(s, &i);
-	if (!parse_digits(s, &i, &val))
-		return (0);
-	if (s[i] != '\0')
-		return (0);
-	*out = val * sign;
-	return (1);
+static void	exit_numeric_error(char *arg)
+{
+	ft_putstr_fd("minishell: exit: ", 2);
+	ft_putstr_fd(arg, 2);
+	ft_putstr_fd(": numeric argument required\n", 2);
+	exit(255);
 }
 
 /*
@@ -74,29 +32,26 @@ static int	is_numeric_ll(const char *s, long long *out)
 */
 int	builtin_exit(char **args, t_shell *shell)
 {
-	long long	ll;
-	int			exit_code;
+	long	exit_code;
+	char	*arg;
 
-	ft_putendl_fd("exit", 1);
-	if (args[1])
+	if (args[1] && args[2])
 	{
-		if (!is_numeric_ll(args[1], &ll))
-		{
-			ft_putstr_fd("minishell: exit: ", 2);
-			ft_putstr_fd(args[1], 2);
-			ft_putendl_fd(": numeric argument required", 2);
-			shell->should_exit = 1;
-			return (255);
-		}
-		if (args[2])
-		{
-			ft_putendl_fd("minishell: exit: too many arguments", 2);
-			return (1);
-		}
-		exit_code = (unsigned char)ll;
-		shell->should_exit = 1;
-		return (exit_code);
+		ft_putstr_fd("minishell: exit: too many arguments\n", 2);
+		shell->exit_status = 1;
+		return (1);
 	}
-	shell->should_exit = 1;
-	return (0);
+	if (!args[1])
+		exit_code = shell->exit_status;
+	else
+	{
+		arg = args[1];
+		if (!is_valid_number(arg) || is_numeric_overflow(arg))
+			exit_numeric_error(arg);
+		exit_code = ft_atoi(arg);
+		exit_code = exit_code % 256;
+		if (exit_code < 0)
+			exit_code += 256;
+	}
+	exit(exit_code);
 }

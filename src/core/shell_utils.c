@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 int	is_all_space(const char *s)
 {
@@ -36,10 +36,23 @@ static int	check_unclosed_quotes(char *line)
 	return (1);
 }
 
+/*
+** NEW: Do not parse an incomplete logical line.
+** Bash never performs syntax checks mid-continuation.
+*/
+static int	is_incomplete_logical_line(char *line)
+{
+	if (needs_continuation(line))
+		return (1);
+	return (0);
+}
+
 static int	process_tokens(char *line, t_pipeline **pipeline)
 {
 	t_token	*tokens;
 
+	if (is_incomplete_logical_line(line))
+		return (0);
 	if (!check_unclosed_quotes(line))
 		return (0);
 	tokens = lexer(line);
@@ -60,6 +73,8 @@ void	process_line(char *line, t_shell *shell)
 	t_pipeline	*pipeline;
 
 	if (!line || !*line)
+		return ;
+	if (needs_continuation(line))
 		return ;
 	if (!process_tokens(line, &pipeline))
 		return ;

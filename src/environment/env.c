@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 /*
 ** increment_shlvl - Increment the SHLVL environment variable
@@ -77,10 +77,11 @@ t_env	*init_env(char **envp)
 
 void	init_shell(t_shell *shell, char **envp)
 {
+	ft_bzero(shell, sizeof(*shell));
+	if (isatty(STDIN_FILENO))
+		shell->interactive = 1;
 	shell->env = init_env(envp);
 	shell->exit_status = 0;
 	shell->should_exit = 0;
-	shell->sigint_during_read = 0;
-	shell->history_path = NULL;
-	increment_shlvl(&shell->env);
+	rl_catch_signals = 0;
 }

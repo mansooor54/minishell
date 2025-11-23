@@ -10,53 +10,34 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
-/* helper: is a separator token (for syntax) */
-static int	is_separator_token(t_token *t)
-{
-	if (!t)
-		return (0);
-	if (t->type == TOKEN_PIPE)
-		return (1);
-	if (t->type == TOKEN_AND)
-		return (1);
-	if (t->type == TOKEN_OR)
-		return (1);
-	if (t->type == TOKEN_SEMICOLON)
-		return (1);
-	return (0);
-}
-
+/* Combined validation for token sequences */
+/* line 35 two redirections in a row: always a syntax error */
+/* line 42 redirection must be followed by a word (filename) */
+/*
+** line 54 control operator (|, &&, ||, ;) rules:
+** - cannot be followed by another separator
+** - cannot be followed by end of input (handled in validate_last_token)
+** - CAN be followed by a redirection (command starting with redirs)
+*/
+/* line 63 semicolon specific: '; ;', '; |', '; >' etc. are invalid */
 /* Combined validation for token sequences */
 static int	validate_token_pair(t_token *t, t_token *next)
 {
-	if (is_redirection(t) && is_redirection(next))
-	{
-		print_syntax_error(t);
-		g_shell.exit_status = 258;
+	if (!check_redirection_pair(t, next))
 		return (0);
-	}
-	if ((is_redirection(t) || is_control_operator(t)) && !is_valid_word(next))
-	{
-		print_syntax_error(next);
-		g_shell.exit_status = 258;
+	if (!check_control_operator(t, next))
 		return (0);
-	}
-	if (t->type == TOKEN_SEMICOLON
-		&& (is_separator_token(next) || is_redirection(next)))
-	{
-		print_syntax_error(next);
-		g_shell.exit_status = 258;
+	if (!check_semicolon(t, next))
 		return (0);
-	}
 	return (1);
 }
 
 /* Validate first token */
 static int	validate_first_token(t_token *first)
 {
-	if (is_separator_token(first) || is_redirection(first))
+	if (is_separator_token(first))
 	{
 		print_syntax_error(first);
 		g_shell.exit_status = 258;
@@ -66,6 +47,11 @@ static int	validate_first_token(t_token *first)
 }
 
 /* Validate last token */
+/*
+** line 99 Line cannot end with:
+** - a separator (|, &&, ||, ;)
+** - a redirection without a target
+*/
 static int	validate_last_token(t_token *last)
 {
 	if (last && (is_separator_token(last) || is_redirection(last)))

@@ -10,23 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
-static int	valid_ident_unset(char *s)
-{
-	int	i;
-
-	if (!s || !(ft_isalpha((unsigned char)s[0]) || s[0] == '_'))
-		return (0);
-	i = 1;
-	while (s[i])
-	{
-		if (!(ft_isalnum((unsigned char)s[i]) || s[i] == '_'))
-			return (0);
-		i++;
-	}
-	return (1);
-}
+#include "../../minishell.h"
 
 /*
 ** Unset builtin command
@@ -42,7 +26,7 @@ int	builtin_unset(char **args, t_env **env)
 	i = 1;
 	while (args[i])
 	{
-		if (valid_ident_unset(args[i]))
+		if (is_valid_identifier(args[i]))
 			remove_env_node(env, args[i]);
 		i++;
 	}

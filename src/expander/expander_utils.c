@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 void	process_dollar(t_exp_ctx *c)
 {
@@ -46,14 +46,28 @@ void	expand_arg(char **arg, t_env *env, int exit_status)
 	*arg = unquoted;
 }
 
+int			get_non_empty_arg_count(char **args);
+char		**get_allocated_compact_args(char **args, int cnt);
+
+static char	**compact_args(char **args)
+{
+	int	cnt;
+
+	if (!args)
+		return (NULL);
+	cnt = get_non_empty_arg_count(args);
+	return (get_allocated_compact_args(args, cnt));
+}
+
 void	expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status)
 {
 	int	i;
 
 	i = 0;
-	while (cmd->args[i])
+	while (cmd->args && cmd->args[i])
 	{
 		expand_arg(&cmd->args[i], env, exit_status);
 		i++;
 	}
+	cmd->args = compact_args(cmd->args);
 }

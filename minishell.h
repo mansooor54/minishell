@@ -6,14 +6,14 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/13 14:28:41 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/11/20 00:00:00 by ChatGPT          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
-/* System includes */
+/* ===================== SYSTEM INCLUDES ===================== */
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
@@ -29,7 +29,7 @@
 # include <readline/history.h>
 # include "libft/libft.h"
 
-/* Error messages */
+/* ===================== ERROR MESSAGES ===================== */
 # define ERR_NEWLINE "minishell: syntax error near unexpected token `newline'"
 # define ERR_PIPE "minishell: syntax error near unexpected token `|'"
 # define ERR_AND "minishell: syntax error near unexpected token `&&'"
@@ -39,15 +39,16 @@
 # define ERR_REDIR_APPEND "minishell: syntax error near unexpected token `>>'"
 # define ERR_REDIR_HEREDOC "minishell: syntax error near unexpected token `<<'"
 # define ERR_TRIPLE_LT "minishell: syntax error near unexpected token `<<<'"
-# define ERR_MULTIPLE_REDIR_IN \
-	"minishell: syntax error near unexpected token `<<<'"
-# define ERR_MULTIPLE_REDIR_OUT \
-	"minishell: syntax error near unexpected token `>>>'"
-# define ERR_CONSECUTIVE_REDIR \
-	"minishell: syntax error near unexpected token `>'"
+# define ERR_MULTIPLE_REDIR_IN "minishell: syntax error near unexpected token \
+`<<<'"
+# define ERR_MULTIPLE_REDIR_OUT "minishell: syntax error near unexpected token \
+`>>>'"
+# define ERR_CONSECUTIVE_REDIR "minishell: syntax error near unexpected token \
+`>'"
 # define ERR_SEMICOLON "minishell: syntax error near unexpected token `;'"
 
-/* ===================== DATA STRUCTURES ===================== */
+/* ===================== STRUCTURES ===================== */
+
 typedef enum e_token_type
 {
 	TOKEN_WORD,
@@ -105,6 +106,11 @@ typedef struct s_shell
 	int		should_exit;
 	int		sigint_during_read;
 	char	*history_path;
+	int		in_heredoc;
+	int		heredoc_sigint;
+	int		eof_count;
+	int		interactive;
+	int		in_continuation;
 }	t_shell;
 
 typedef struct s_child_io
@@ -142,7 +148,7 @@ typedef struct s_quote_ctx
 	char	*res;
 }	t_quote_ctx;
 
-/* Global variable - required for signal handling and shell state */
+/* Global variable */
 extern t_shell	g_shell;
 
 /* ===================== MAIN & CORE ===================== */
@@ -152,6 +158,7 @@ int			is_all_space(const char *s);
 void		process_line(char *line, t_shell *shell);
 char		*read_logical_line(void);
 int			needs_continuation(const char *s);
+char		*join_continuation(char *line, char *next); /* ADDED */
 
 /* ===================== LEXER ===================== */
 t_token		*lexer(char *input);
@@ -167,6 +174,7 @@ t_token		*try_or_pipe(char **input);
 t_token		*try_and(char **input);
 t_token		*try_inredir(char **input);
 t_token		*try_outredir(char **input);
+t_token		*try_semicolon(char **input); /* ADDED */
 
 /* ===================== PARSER ===================== */
 t_pipeline	*parser(t_token *tokens);
@@ -184,6 +192,10 @@ int			is_redirection(t_token *token);
 int			is_gt(t_token *t);
 int			is_lt(t_token *t);
 int			tok_op_len(t_token *t);
+int			is_separator_token(t_token *t);
+int			check_redirection_pair(t_token *t, t_token *next);
+int			check_control_operator(t_token *t, t_token *next);
+int			check_semicolon(t_token *t, t_token *next);
 
 /* ===================== EXPANDER ===================== */
 void		expander(t_pipeline *pipeline, t_env *env);
@@ -208,9 +220,9 @@ int			wait_for_children(pid_t *pids, int count);
 int			execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx);
 int			init_pipeline(int cmd_count, pid_t **pids);
 int			count_commands(t_cmd *cmds);
-void		print_error(const char *function, const char *message);
-void		safe_close(int fd);
-void		cleanup_pipe(int pipefd[2]);
+void		print_error(const char *function, const char *message); /* ADDED */
+void		safe_close(int fd); /* ADDED */
+void		cleanup_pipe(int pipefd[2]); /* ADDED */
 void		execute_commands(t_cmd *cmd, t_shell *shell);
 void		perror_with_cmd(const char *cmd);
 int			is_directory(const char *path);
@@ -224,6 +236,9 @@ pid_t		create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io);
 int			setup_child_fds(int pipefd[2], int prev_read_fd, int has_next);
 int			setup_redirections(t_redir *redirs);
 int			handle_heredoc(char *delimiter);
+char		*clean_delimiter(char *delim, int *quoted);
+int			check_heredoc_end(char *line, char *clean);
+char		*get_expanded_line(char *line, int quoted);
 int			handle_input(char *file);
 int			handle_output(char *file, int append);
 char		*find_executable(char *cmd, t_env *env);
@@ -255,20 +270,21 @@ void		init_shell(t_shell *shell, char **envp);
 t_env		*create_env_node(char *key, char *value);
 void		add_env_node(t_env **env, t_env *new_node);
 void		remove_env_node(t_env **env, char *key);
-char		**env_to_array(t_env *env);
+char		**env_to_array(t_env *env); /* ADDED */
+void		env_set_value(t_env **env, char *key, char *value); /* ADDED */
 void		parse_env_string(char *env_str, char **key, char **value);
 int			append_env(char ***arr, size_t *n, const char *k, const char *v);
+void		init_terminal(void);
 
 /* ===================== SIGNALS ===================== */
 void		setup_signals(void);
 void		handle_sigint(int sig);
 void		handle_sigquit(int sig);
-void		init_terminal(void);
+void		handle_sigint_heredoc(int sig);
 
 /* ===================== HISTORY ===================== */
 void		history_add_line(const char *line);
 int			history_init(t_shell *shell);
-void		history_add_line(const char *line);
 void		history_save(t_shell *shell);
 
 /* ===================== UTILS ===================== */
@@ -276,5 +292,9 @@ void		free_array(char **arr);
 char		*ft_strjoin_free(char *s1, char const *s2);
 void		free_env(t_env *env);
 void		print_logo(void);
+int			is_valid_identifier(char *s);
+char		*safe_strdup_or_empty(const char *src);
+int			is_numeric_overflow(char *str);
+int			is_valid_number(char *str);
 
 #endif

@@ -10,10 +10,19 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 /* forward decl only; real body is in expander_utils.c */
 void	process_dollar(t_exp_ctx *c);
+
+/* Helper: check if current character is a quote */
+static int	is_ctx_quote(t_exp_ctx *c)
+{
+	char	ch;
+
+	ch = c->str[c->i];
+	return (ch == '\'' || ch == '"');
+}
 
 static int	init_ctx(t_exp_ctx *c, char *s, t_env *env, int st)
 {
@@ -29,16 +38,9 @@ static int	init_ctx(t_exp_ctx *c, char *s, t_env *env, int st)
 	c->j = 0;
 	cap = ft_strlen(s) * 10 + 4096;
 	c->result = malloc(cap);
+	if (!c->result)
+		return (0);
 	return (c->result != NULL);
-}
-
-/* Helper: check if current character is a quote */
-static int	is_quote(t_exp_ctx *c)
-{
-	char	ch;
-
-	ch = c->str[c->i];
-	return (ch == '\'' || ch == '"');
 }
 
 /* Helper: handle quote toggling during expansion */
@@ -64,7 +66,7 @@ char	*expand_variables(char *str, t_env *env, int exit_status)
 		return (NULL);
 	while (str[c.i])
 	{
-		if (is_quote(&c))
+		if (is_ctx_quote(&c))
 			handle_quote(&c);
 		else if (should_expand(&c))
 			process_dollar(&c);

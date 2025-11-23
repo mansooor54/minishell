@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 static int	handle_directory_check(char *cmd, t_shell *shell)
 {
@@ -64,6 +64,8 @@ static void	handle_parent_process(pid_t pid, t_shell *shell)
 	int	status;
 
 	status = 0;
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
 	if (waitpid(pid, &status, 0) == -1)
 	{
 		print_error("waitpid", strerror(errno));
@@ -76,6 +78,8 @@ static void	handle_parent_process(pid_t pid, t_shell *shell)
 		else if (WIFSIGNALED(status))
 			shell->exit_status = 128 + WTERMSIG(status);
 	}
+	signal(SIGINT, handle_sigint);
+	signal(SIGQUIT, handle_sigquit);
 }
 
 void	execute_external(t_cmd *cmd, t_shell *shell)

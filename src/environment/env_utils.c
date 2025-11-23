@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 /*
 ** Parse environment string (KEY=VALUE)
@@ -78,4 +78,30 @@ char	**env_to_array(t_env *env)
 	}
 	envp[i] = NULL;
 	return (envp);
+}
+
+/*
+** Update or add environment variable
+** If key exists, update value; otherwise create new node
+** Duplicates the value (if not NULL)
+*/
+void	env_set_value(t_env **env, char *key, char *value)
+{
+	t_env	*cur;
+
+	cur = *env;
+	while (cur)
+	{
+		if (ft_strcmp(cur->key, key) == 0)
+		{
+			free(cur->value);
+			if (value)
+				cur->value = ft_strdup(value);
+			else
+				cur->value = NULL;
+			return ;
+		}
+		cur = cur->next;
+	}
+	add_env_node(env, create_env_node(key, value));
 }

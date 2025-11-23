@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 static void	execute_builtin_child(t_cmd *cmd, t_shell *shell)
 {

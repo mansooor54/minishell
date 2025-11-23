@@ -10,40 +10,42 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
-static void	execute_with_path(char *cmd, char *path, char **argv, char **envp)
+static void	handle_execve_error(char **argv, t_shell *shell)
 {
-	execve(path, argv, envp);
-	ft_putstr_fd("minishell: ", 2);
-	ft_putstr_fd(cmd, 2);
-	ft_putstr_fd(": ", 2);
-	ft_putendl_fd(strerror(errno), 2);
-	if (errno == EACCES)
-		exit(126);
+	if (errno == EACCES || errno == ENOEXEC)
+	{
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(argv[0], 2);
+		ft_putendl_fd(": Permission denied", 2);
+		shell->exit_status = 126;
+	}
 	else
-		exit(127);
+	{
+		ft_putstr_fd("minishell: ", 2);
+		perror(argv[0]);
+		shell->exit_status = 127;
+	}
 }
 
 void	execute_command(char **argv, t_shell *shell, char **envp)
 {
 	char	*path;
 
-	if (!argv || !argv[0] || !argv[0][0])
+	path = resolve_command_path(argv[0], shell);
+	if (!handle_path_errors(argv[0], path, shell))
 	{
-		shell->exit_status = 0;
+		if (path)
+			free(path);
 		return ;
 	}
-	path = resolve_command_path(argv[0], shell);
-	if (handle_path_errors(argv[0], path, shell))
+	if (!check_execution_permission(argv[0], path, shell))
+	{
+		free(path);
 		return ;
-	if (check_execution_permission(argv[0], path, shell))
-		return ;
-	execute_with_path(argv[0], path, argv, envp);
-	perror_with_cmd(argv[0]);
+	}
+	execve(path, argv, envp);
+	handle_execve_error(argv, shell);
 	free(path);
-	if (errno == EACCES)
-		shell->exit_status = 126;
-	else
-		shell->exit_status = 127;
 }

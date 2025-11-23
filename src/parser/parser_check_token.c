@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-/* Token validation functions */
+#include "../../minishell.h"
+
 int	is_valid_word(t_token *token)
 {
 	return (token && token->type == TOKEN_WORD);

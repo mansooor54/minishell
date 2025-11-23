@@ -10,8 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
+#include "../../minishell.h"
 /*
 ** init_pipeline - Initialize pipeline execution
 **
@@ -32,43 +31,6 @@ int	init_pipeline(int cmd_count, pid_t **pids)
 	}
 	return (0);
 }
-
-/*
-** update_prev_fd - Update previous read fd for next iteration
-**
-** Closes old prev_read_fd and updates it with new pipe read end.
-**
-** @param prev_read_fd: Current previous read fd
-** @param pipefd: Current pipe fds
-** @param has_next: 1 if there's a next command
-**
-** Return: New prev_read_fd value
-*/
-int	update_prev_fd(int prev_read_fd, int pipefd[2], int has_next)
-{
-	safe_close(prev_read_fd);
-	if (has_next)
-	{
-		safe_close(pipefd[1]);
-		return (pipefd[0]);
-	}
-	return (-1);
-}
-
-/*
-** execute_one_command - Execute one command in the pipeline
-**
-** Creates pipe if needed, forks child, and updates file descriptors.
-**
-** @param cmd: Current command
-** @param shell: Shell state
-** @param pids: Array to store child pid
-** @param index: Index in pids array
-** @param prev_read_fd: Pointer to previous read fd
-**
-** Return: 0 on success, -1 on error
-*/
-/* was: (t_cmd*, t_shell*, pid_t*, int, int*) */
 
 /* prepare pipe + child io */
 static int	prepare_child_io(t_cmd *cmd, int prev_rd,
@@ -112,11 +74,38 @@ static void	finalize_after_fork(t_child_io *io, int pipefd[2], int *prev_rd)
 		*prev_rd = -1;
 }
 
+static int	handle_empty_command(t_cmd *cmd, t_pipe_ctx *ctx, int index)
+{
+	pid_t	pid;
+
+	if (!cmd->redirs)
+	{
+		ctx->shell->exit_status = 0;
+		return (0);
+	}
+	pid = fork();
+	if (pid < 0)
+	{
+		print_error("fork", strerror(errno));
+		return (-1);
+	}
+	if (pid == 0)
+	{
+		if (setup_redirections(cmd->redirs) < 0)
+			exit(1);
+		exit(0);
+	}
+	ctx->pids[index] = pid;
+	return (0);
+}
+
 int	execute_one_command(t_cmd *cmd, int index, t_pipe_ctx *ctx)
 {
 	int			pipefd[2];
 	t_child_io	io;
 
+	if (!cmd->args || !cmd->args[0])
+		return (handle_empty_command(cmd, ctx, index));
 	if (prepare_child_io(cmd, *ctx->prev_rd, pipefd, &io) == -1)
 		return (-1);
 	ctx->pids[index] = create_child_process(cmd, ctx->shell, &io);

@@ -10,13 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
-static inline void	put2(const char *s)
-{
-	if (s)
-		write(2, s, ft_strlen(s));
-}
+#include "../../minishell.h"
 
 char	*resolve_command_path(char *cmd, t_shell *shell)
 {
@@ -33,38 +27,40 @@ int	handle_path_errors(char *cmd, char *path, t_shell *shell)
 {
 	if (!path)
 	{
-		cmd_not_found(cmd);
+		if (access(cmd, F_OK) == 0 && access(cmd, X_OK) != 0)
+		{
+			ft_putstr_fd("minishell: ", 2);
+			ft_putstr_fd(cmd, 2);
+			ft_putendl_fd(": Permission denied", 2);
+			shell->exit_status = 126;
+			return (0);
+		}
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(cmd, 2);
+		ft_putendl_fd(": command not found", 2);
 		shell->exit_status = 127;
-		return (1);
+		return (0);
 	}
-	if (is_directory(path))
-	{
-		put2("minishell: ");
-		put2(cmd);
-		put2(": is a directory\n");
-		free(path);
-		shell->exit_status = 126;
-		return (1);
-	}
-	return (0);
+	return (1);
 }
 
 int	check_execution_permission(char *cmd, char *path, t_shell *shell)
 {
-	if (access(path, X_OK) == -1)
+	if (is_directory(path))
 	{
-		if (errno == EACCES)
-		{
-			perror_with_cmd(cmd);
-			shell->exit_status = 126;
-		}
-		else
-		{
-			perror_with_cmd(cmd);
-			shell->exit_status = 127;
-		}
-		free(path);
-		return (1);
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(cmd, 2);
+		ft_putendl_fd(": Is a directory", 2);
+		shell->exit_status = 126;
+		return (0);
 	}
-	return (0);
+	if (access(path, F_OK) == 0 && access(path, X_OK) != 0)
+	{
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(cmd, 2);
+		ft_putendl_fd(": Permission denied", 2);
+		shell->exit_status = 126;
+		return (0);
+	}
+	return (1);
 }

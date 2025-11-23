@@ -10,8 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
+#include "../../minishell.h"
 /*
 ** Create a new pipeline node
 ** Initializes pipeline with commands and logical operator

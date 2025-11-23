@@ -10,16 +10,16 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
-static int	is_quote(char ch)
+static int	is_quote_char(char ch)
 {
 	return (ch == '\'' || ch == '"');
 }
 
 static int	handle_quote(t_quote_ctx *c, char *s)
 {
-	if (!c->quote && is_quote(s[c->i]))
+	if (!c->quote && is_quote_char(s[c->i]))
 	{
 		c->quote = s[c->i++];
 		return (1);
@@ -33,71 +33,62 @@ static int	handle_quote(t_quote_ctx *c, char *s)
 	return (0);
 }
 
-static int	handle_bs_outside(t_quote_ctx *c, char *s)
+static void	handle_bs_outside(t_quote_ctx *c, char *s)
 {
-	if (c->quote || s[c->i] != '\\')
-		return (0);
-	if (s[c->i + 1] == '\n')
+	if (s[c->i] == '\\' && !c->quote && s[c->i + 1])
 	{
+		c->res[c->j++] = s[c->i + 1];
 		c->i += 2;
-		return (1);
 	}
-	if (s[c->i + 1] == '\0')
+	else
 	{
-		c->res[c->j++] = '\\';
-		c->i += 1;
-		return (1);
+		c->res[c->j++] = s[c->i++];
 	}
-	c->res[c->j++] = s[c->i + 1];
-	c->i += 2;
-	return (1);
 }
 
-static int	handle_bs_in_dq(t_quote_ctx *c, char *s)
+static void	handle_bs_in_dq(t_quote_ctx *c, char *s)
 {
-	char	nx;
-
-	if (c->quote != '"' || s[c->i] != '\\')
-		return (0);
-	nx = s[c->i + 1];
-	if (nx == '\\' || nx == '"' || nx == '`' || nx == '$')
+	if (s[c->i] == '\\' && c->quote == '"' && s[c->i + 1])
 	{
-		c->res[c->j++] = nx;
-		c->i += 2;
-		return (1);
+		if (s[c->i + 1] == '"' || s[c->i + 1] == '$'
+			|| s[c->i + 1] == '\\')
+		{
+			c->res[c->j++] = s[c->i + 1];
+			c->i += 2;
+		}
+		else
+		{
+			c->res[c->j++] = s[c->i++];
+		}
 	}
-	if (nx == '\n')
-	{
-		c->i += 2;
-		return (1);
-	}
-	return (0);
+	else
+		handle_bs_outside(c, s);
 }
 
-char	*remove_quotes(char *str)
+char	*remove_quotes(char *s)
 {
 	t_quote_ctx	c;
-	size_t		len;
+	char		*res;
 
-	if (!str)
-		return (NULL);
-	len = ft_strlen(str);
-	c.res = malloc(len + 1);
-	if (!c.res)
+	if (!s)
 		return (NULL);
 	c.i = 0;
 	c.j = 0;
 	c.quote = 0;
-	while (str[c.i])
+	c.str = s;
+	res = malloc(ft_strlen(s) + 1);
+	if (!res)
+		return (NULL);
+	c.res = res;
+	while (s[c.i])
 	{
-		if (handle_quote(&c, str))
+		if (handle_quote(&c, s))
 			continue ;
-		if (handle_bs_outside(&c, str))
-			continue ;
-		if (handle_bs_in_dq(&c, str))
-			continue ;
-		c.res[c.j++] = str[c.i++];
+		if (s[c.i] == '\\')
+			handle_bs_in_dq(&c, s);
+		else
+			c.res[c.j++] = s[c.i++];
 	}
 	c.res[c.j] = '\0';
-	return (c.res);
+	return (res);
 }

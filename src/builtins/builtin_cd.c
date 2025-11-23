@@ -10,38 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
-/* return heap string; never NULL, returns "" if src is NULL */
-static char	*safe_strdup_or_empty(const char *src)
-{
-	if (src == NULL)
-		return (ft_strdup(""));
-	return (ft_strdup((char *)src));
-}
-
-/* update or add env key=value, never store NULL values */
-static int	set_env_kv(t_env **env, const char *key, const char *value)
-{
-	t_env	*cur;
-
-	if (!env || !key)
-		return (1);
-	cur = *env;
-	while (cur)
-	{
-		if (ft_strcmp(cur->key, (char *)key) == 0)
-		{
-			free(cur->value);
-			cur->value = safe_strdup_or_empty(value);
-			return (0);
-		}
-		cur = cur->next;
-	}
-	add_env_node(env, create_env_node((char *)key,
-			safe_strdup_or_empty(value)));
-	return (0);
-}
+#include "../../minishell.h"
 
 /* handle chdir + print errors */
 static int	change_directory(char *target)
@@ -63,11 +32,13 @@ static void	update_pwd_vars(t_env **env, char *oldpwd, int print_after)
 	char	*newpwd;
 
 	if (oldpwd)
-		set_env_kv(env, "OLDPWD", oldpwd);
+		env_set_value(env, "OLDPWD", oldpwd);
+	else
+		env_set_value(env, "OLDPWD", "");
 	newpwd = dup_cwd();
 	if (newpwd)
 	{
-		set_env_kv(env, "PWD", newpwd);
+		env_set_value(env, "PWD", newpwd);
 		if (print_after)
 			ft_putendl_fd(newpwd, 1);
 	}
@@ -88,7 +59,10 @@ int	builtin_cd(char **args, t_env **env)
 	oldpwd = dup_cwd();
 	target = resolve_target(args, *env, &print_after);
 	if (!target)
+	{
+		free(oldpwd);
 		return (1);
+	}
 	if (change_directory(target))
 	{
 		free(target);

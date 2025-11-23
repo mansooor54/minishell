@@ -10,8 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
+#include "../../minishell.h"
 /* ====== helpers (static, same variable names) ====== */
 
 static int	enter_quote(char *s, size_t *i, char *in_quote, int *escaped)

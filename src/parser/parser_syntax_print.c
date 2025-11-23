@@ -10,8 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
+#include "../../minishell.h"
 /* First function: Handle simple token type errors */
 static void	print_token_type_error(t_token *token)
 {

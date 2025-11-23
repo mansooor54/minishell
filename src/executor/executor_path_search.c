@@ -10,46 +10,53 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
-/* try dir/cmd and return full if executable */
-static char	*probe_dir_for_cmd(const char *dir, const char *cmd)
+static char	*check_and_store_path(char *full, char **found_non_exec)
 {
-	char	*full;
-
-	full = join_cmd_path(dir, cmd);
-	if (!full)
-		return (NULL);
-	if (is_exec_file(full))
+	if (full && is_exec_file(full))
+	{
+		if (*found_non_exec)
+			free(*found_non_exec);
 		return (full);
-	free(full);
+	}
+	if (full && !*found_non_exec && access(full, F_OK) == 0)
+	{
+		if (!is_directory(full))
+			*found_non_exec = full;
+		else
+			free(full);
+	}
+	else
+		free(full);
 	return (NULL);
 }
 
-/* iterate PATH entries */
 char	*search_in_path(const char *path, const char *cmd)
 {
 	size_t	i;
 	size_t	j;
 	char	*dir;
-	char	*hit;
+	char	*full;
+	char	*found_non_exec;
 
 	if (!path)
 		return (NULL);
 	i = 0;
+	found_non_exec = NULL;
 	while (1)
 	{
 		j = seg_end(path, i);
 		dir = dup_segment_or_dot(path, i, j);
 		if (!dir)
-			return (NULL);
-		hit = probe_dir_for_cmd(dir, cmd);
+			return (found_non_exec);
+		full = join_cmd_path(dir, cmd);
 		free(dir);
-		if (hit)
-			return (hit);
+		if (check_and_store_path(full, &found_non_exec))
+			return (full);
 		if (!path[j])
 			break ;
 		i = j + 1;
 	}
-	return (NULL);
+	return (found_non_exec);
 }

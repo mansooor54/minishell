@@ -10,14 +10,13 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
-
+#include "../../minishell.h"
 /*
 ** Identify and create operator token
 ** Handles |, ||, &&, <, <<, >, >>
 */
 
-static t_token	*try_semicolon(char **input)
+t_token	*try_semicolon(char **input)
 {
 	if (**input == ';')
 	{

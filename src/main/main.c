@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "../../minishell.h"
 
 t_shell	g_shell;
 
@@ -22,7 +22,6 @@ int	main(int argc, char **argv, char **envp)
 	print_logo();
 	init_shell(&g_shell, envp);
 	setup_signals();
-	init_terminal();
 	history_init(&g_shell);
 	shell_loop(&g_shell);
 	history_save(&g_shell);
