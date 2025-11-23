@@ -12,6 +12,8 @@
 
 #include "../../minishell.h"
 
+#include <sys/ioctl.h>
+
 /*
 ** Handle SIGINT (Ctrl-C)
 ** Displays new prompt without terminating shell
@@ -27,6 +29,7 @@ void	handle_sigint(int sig)
 		g_shell.heredoc_sigint = 1;
 		write(1, "^C\n", 3);
 		rl_done = 1;
+		ioctl(STDIN_FILENO, TIOCSTI, "\n");
 		return ;
 	}
 	if (g_shell.in_continuation)
@@ -34,6 +37,7 @@ void	handle_sigint(int sig)
 		g_shell.sigint_during_read = 1;
 		write(1, "^C\n", 3);
 		rl_done = 1;
+		ioctl(STDIN_FILENO, TIOCSTI, "\n");
 		return ;
 	}
 	write(1, "^C\n", 3);
@@ -57,6 +61,14 @@ void	handle_sigquit(int sig)
 */
 void	setup_signals(void)
 {
-	signal(SIGINT, handle_sigint);
-	signal(SIGQUIT, handle_sigquit);
+	struct sigaction	sa;
+
+	sa.sa_handler = handle_sigint;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGINT, &sa, NULL);
+	sa.sa_handler = handle_sigquit;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGQUIT, &sa, NULL);
 }

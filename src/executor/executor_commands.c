@@ -37,9 +37,13 @@ static void	execute_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 			exit(1);
 		exit(execute_builtin(cmd, shell));
 	}
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
 	waitpid(pid, &status, 0);
 	if (WIFEXITED(status))
 		shell->exit_status = WEXITSTATUS(status);
+	signal(SIGINT, handle_sigint);
+	signal(SIGQUIT, handle_sigquit);
 }
 
 int	is_directory(const char *path)

@@ -19,7 +19,7 @@ int	main(int argc, char **argv, char **envp)
 	(void)argc;
 	(void)argv;
 	write(1, "\033[2J\033[H", 7);
-	print_logo();
+	//print_logo();
 	init_shell(&g_shell, envp);
 	setup_signals();
 	history_init(&g_shell);

@@ -64,7 +64,7 @@ EXECUTOR = executor_child_fds executor_child_run \
             executor_redirections executor_utils executor
 
 EXPANDER = expander_core expander_pipeline expander_quotes \
-            expander_utils expander_vars
+            expander_utils expander_vars expander_utils_helpers
 
 HISTORY = builtin_history history
 

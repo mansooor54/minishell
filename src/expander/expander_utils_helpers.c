@@ -58,7 +58,7 @@ int	get_non_empty_arg_count(char **args)
 	return (count_non_empty_args(args));
 }
 
-char	*get_allocated_compact_args(char **args, int cnt)
+char	**get_allocated_compact_args(char **args, int cnt)
 {
-	return ((char *)allocate_compact_args(args, cnt));
+	return (allocate_compact_args(args, cnt));
 }
