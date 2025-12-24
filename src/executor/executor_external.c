@@ -33,6 +33,15 @@ static int	handle_path_resolution(t_cmd *cmd, t_shell *shell, char **path)
 	{
 		if (handle_directory_check(cmd->args[0], shell))
 			return (1);
+		if (access(cmd->args[0], F_OK) != 0)
+		{
+			ft_putstr_fd("minishell: ", 2);
+			ft_putstr_fd(cmd->args[0], 2);
+			ft_putstr_fd(": ", 2);
+			ft_putendl_fd(strerror(errno), 2);
+			shell->exit_status = 127;
+			return (1);
+		}
 		*path = ft_strdup(cmd->args[0]);
 	}
 	else

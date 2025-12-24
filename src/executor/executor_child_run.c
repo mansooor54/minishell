@@ -55,7 +55,7 @@ static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
 		{
 			cmd_not_found(cmd->args[0]);
 			shell->exit_status = 127;
-			return ;
+			exit(127);
 		}
 		execute_external_child(cmd, shell, path);
 	}

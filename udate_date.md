@@ -1,4 +1,9 @@
 ```bash
+# 24-12-2025
+    - Fix error messege for permission denied 
+    - Fix error for No such file or directory
+    - minishell_Evaluation_v04.zip
+
 # 16-11-2025
     - handle is_numeric_overflow like bash:
         minishell> exit 99999999999999999999

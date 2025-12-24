@@ -78,7 +78,6 @@ void	process_line(char *line, t_shell *shell)
 		return ;
 	if (!process_tokens(line, &pipeline))
 		return ;
-	expander(pipeline, shell->env);
 	executor(pipeline, shell);
 	free_pipeline(pipeline);
 }

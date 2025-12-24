@@ -61,6 +61,12 @@ void	execute_commands(t_cmd *cmd, t_shell *shell)
 {
 	if (!cmd || !cmd->args || !cmd->args[0])
 		return ;
+	if (!cmd->expanded)
+	{
+		expand_cmd_args(cmd, shell->env, shell->exit_status);
+		expand_redirections(cmd->redirs, shell->env, shell->exit_status);
+		cmd->expanded = 1;
+	}
 	if (is_builtin(cmd->args[0]))
 	{
 		if (cmd->redirs)

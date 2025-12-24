@@ -21,7 +21,8 @@ int	handle_input(char *file)
 	{
 		ft_putstr_fd("minishell: ", 2);
 		ft_putstr_fd(file, 2);
-		ft_putendl_fd(": No such file or directory", 2);
+		ft_putstr_fd(": ", 2);
+		ft_putendl_fd(strerror(errno), 2);
 		return (-1);
 	}
 	dup2(fd, STDIN_FILENO);

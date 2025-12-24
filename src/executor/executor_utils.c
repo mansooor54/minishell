@@ -31,7 +31,8 @@ int	handle_path_errors(char *cmd, char *path, t_shell *shell)
 		{
 			ft_putstr_fd("minishell: ", 2);
 			ft_putstr_fd(cmd, 2);
-			ft_putendl_fd(": Permission denied", 2);
+			ft_putstr_fd(": ", 2);
+			ft_putendl_fd(strerror(errno), 2);
 			shell->exit_status = 126;
 			return (0);
 		}
@@ -58,7 +59,8 @@ int	check_execution_permission(char *cmd, char *path, t_shell *shell)
 	{
 		ft_putstr_fd("minishell: ", 2);
 		ft_putstr_fd(cmd, 2);
-		ft_putendl_fd(": Permission denied", 2);
+		ft_putstr_fd(": ", 2);
+		ft_putendl_fd(strerror(errno), 2);
 		shell->exit_status = 126;
 		return (0);
 	}
