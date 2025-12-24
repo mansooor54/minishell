@@ -73,7 +73,7 @@ LEXER = lexer_operator_type lexer_operator lexer_unclose \
 
 SIGNALS = signals
 
-UTILS = utils utils_num
+UTILS = utils utils_num ft_atoll
 
 # Source files - FIXED: Using consistent SRCS variable
 SRCS = $(addsuffix .c, $(addprefix src/builtins/, $(BUILTINS))) \

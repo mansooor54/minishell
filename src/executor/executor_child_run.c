@@ -44,6 +44,14 @@ static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
 
 	if (!cmd || !cmd->args || !cmd->args[0])
 		exit(0);
+	if (!cmd->expanded)
+	{
+		expand_cmd_args(cmd, shell->env, shell->exit_status);
+		expand_redirections(cmd->redirs, shell->env, shell->exit_status);
+		cmd->expanded = 1;
+	}
+	if (!cmd->args[0] || !cmd->args[0][0])
+		exit(0);
 	if (setup_redirections(cmd->redirs) == -1)
 		exit(1);
 	if (is_builtin(cmd->args[0]))

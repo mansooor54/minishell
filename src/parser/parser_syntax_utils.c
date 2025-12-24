@@ -33,7 +33,7 @@ int	check_redirection_pair(t_token *t, t_token *next)
 {
 	if (is_redirection(t) && is_redirection(next))
 	{
-		print_syntax_error(t);
+		print_syntax_error(next);
 		g_shell.exit_status = 258;
 		return (0);
 	}

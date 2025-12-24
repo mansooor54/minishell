@@ -1,32 +1,38 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   ft_atoll.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/13 15:04:45 by malmarzo         ###   ########.fr       */
+/*   Created: 2025/12/24 00:00:00 by malmarzo          #+#    #+#             */
+/*   Updated: 2025/12/24 00:00:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-t_shell	g_shell;
-
-int	main(int argc, char **argv, char **envp)
+long long	ft_atoll(const char *str)
 {
-	(void)argc;
-	(void)argv;
-	write(1, "\033[2J\033[H", 7);
-	//print_logo();
-	init_shell(&g_shell, envp);
-	setup_signals();
-	history_init(&g_shell);
-	shell_loop(&g_shell);
-	history_save(&g_shell);
-	rl_clear_history();
-	free_env(g_shell.env);
-	free(g_shell.history_path);
-	return (g_shell.exit_status);
+	long long	result;
+	int			sign;
+	int			i;
+
+	result = 0;
+	sign = 1;
+	i = 0;
+	while (str[i] == 32 || (str[i] >= 9 && str[i] <= 13))
+		i++;
+	if (str[i] == '-' || str[i] == '+')
+	{
+		if (str[i] == '-')
+			sign = -1;
+		i++;
+	}
+	while (str[i] >= '0' && str[i] <= '9')
+	{
+		result = result * 10 + (str[i] - '0');
+		i++;
+	}
+	return (result * sign);
 }

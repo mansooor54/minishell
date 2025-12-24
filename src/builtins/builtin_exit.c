@@ -32,9 +32,10 @@ static void	exit_numeric_error(char *arg)
 */
 int	builtin_exit(char **args, t_shell *shell)
 {
-	long	exit_code;
-	char	*arg;
+	long long	exit_code;
+	char		*arg;
 
+	ft_putendl_fd("exit", 1);
 	if (args[1] && args[2])
 	{
 		ft_putstr_fd("minishell: exit: too many arguments\n", 2);
@@ -48,7 +49,7 @@ int	builtin_exit(char **args, t_shell *shell)
 		arg = args[1];
 		if (!is_valid_number(arg) || is_numeric_overflow(arg))
 			exit_numeric_error(arg);
-		exit_code = ft_atoi(arg);
+		exit_code = ft_atoll(arg);
 		exit_code = exit_code % 256;
 		if (exit_code < 0)
 			exit_code += 256;

@@ -296,5 +296,6 @@ int			is_valid_identifier(char *s);
 char		*safe_strdup_or_empty(const char *src);
 int			is_numeric_overflow(char *str);
 int			is_valid_number(char *str);
+long long	ft_atoll(const char *str);
 
 #endif

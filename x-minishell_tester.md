@@ -170,3 +170,125 @@ bash error = ( Permission denied)
 🎊 🎊 🎊
 😎 😎 😎
 🎉 🎉 🎉
+
+
+
+ minishell_tester git:(main) ✗ ./tester syntax
+🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+                                                                                             
+ ██    ██ █ ██    █ █ █████ █   █ █████ █     █       ██████ █████ █████ ██████ █████ █████  
+ ███  ███ █ ███   █ █ █     █   █ █     █     █         ██   █     █       ██   █     █   ██ 
+ █ ████ █ █ █ ██  █ █ █████ █████ ████  █     █         ██   ████  █████   ██   ████  █████  
+ █  ██  █ █ █  ██ █ █     █ █   █ █     █     █         ██   █         █   ██   █     █   ██ 
+ █      █ █ █   ███ █ █████ █   █ █████ █████ █████     ██   █████ █████   ██   █████ █   ██ 
+                                                                                             
+🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+                                                                                              
+———————————— syntax
+Test   1: ❌ | 
+mini exit code = 258
+bash exit code = 2
+Test   2: ❌ | echo oi 
+mini exit code = 258
+bash exit code = 2
+Test   3: ❌ | | 
+mini exit code = 258
+bash exit code = 2
+Test   4: ❌ | $ 
+mini exit code = 258
+bash exit code = 2
+Test   5: ❌ | > 
+mini exit code = 258
+bash exit code = 2
+Test   6: ❌ > 
+mini exit code = 258
+bash exit code = 2
+Test   7: ❌ >> 
+mini exit code = 258
+bash exit code = 2
+Test   8: ❌ >>> 
+mini exit code = 258
+bash exit code = 2
+Test   9: ❌ < 
+mini exit code = 258
+bash exit code = 2
+Test  10: ❌ << 
+mini exit code = 258
+bash exit code = 2
+Test  11: ❌ echo hi < 
+mini exit code = 258
+bash exit code = 2
+Test  12: ❌ cat    <| ls 
+mini exit code = 258
+bash exit code = 2
+Test  13: ❌ echo hi | > 
+mini exit code = 258
+bash exit code = 2
+Test  14: ❌ echo hi | > >> 
+mini exit code = 258
+bash exit code = 2
+mini error = ( syntax error near unexpected token `>')
+bash error = ( syntax error near unexpected token `>>')
+Test  15: ❌ echo hi | < | 
+mini exit code = 258
+bash exit code = 2
+Test  16: ❌ echo hi |   | 
+mini exit code = 258
+bash exit code = 2
+Test  17: ✅ echo hi |  "|" 
+1/17
+😭 😭 😭
+➜  minishell_tester git:(main) ✗ ./tester os_specific
+🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+                                                                                             
+ ██    ██ █ ██    █ █ █████ █   █ █████ █     █       ██████ █████ █████ ██████ █████ █████  
+ ███  ███ █ ███   █ █ █     █   █ █     █     █         ██   █     █       ██   █     █   ██ 
+ █ ████ █ █ █ ██  █ █ █████ █████ ████  █     █         ██   ████  █████   ██   ████  █████  
+ █  ██  █ █ █  ██ █ █     █ █   █ █     █     █         ██   █         █   ██   █     █   ██ 
+ █      █ █ █   ███ █ █████ █   █ █████ █████ █████     ██   █████ █████   ██   █████ █   ██ 
+                                                                                             
+🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+                                                                                              
+———————————— os_specific
+Test   1: ❌ unset HELLO= 
+mini exit code = 0
+bash exit code = 1
+mini error = ()
+bash error = ( not a valid identifier)
+Test   2: ❌ unset  A- 
+mini exit code = 0
+bash exit code = 1
+mini error = ()
+bash error = ( not a valid identifier)
+Test   3: ✅ export HELLO=123 A- WORLD=456 
+Test   4: ❌ unset  HELLO A- WORLD 
+mini exit code = 0
+bash exit code = 1
+mini error = ()
+bash error = ( not a valid identifier)
+Test   5: ❌ export UNO=1 DOS-2 TRES=3 || env | grep TRES 
+mini output = ()
+bash output = (TRES=3)
+mini exit code = 1
+bash exit code = 0
+Test   6: ❌ export | sort | grep -v SHLVL | grep -v "declare -x _" | grep -v "PS.=" 
+mini output = (CLAUDE_CODE_SSE_PORT=50062 COLORTERM=truecolor COMMAND_MODE=unix2003 DISPLAY=/private/tmp/com.apple.launchd.NtxTLe3G5d/org.xquartz:0 ENABLE_IDE_INTEGRATION=true GIT_ASKPASS=/private/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/AppTranslocation/916872CE-DCDB-449A-BFD8-7200145EEC68/d/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh HOME=/Users/mansoor_almarzooqi HOMEBREW_CACHE=/tmp/mansoor_almarzooqi/Homebrew/Caches HOMEBREW_CELLAR=/opt/homebrew/Cellar HOMEBREW_PREFIX=/opt/homebrew HOMEBREW_REPOSITORY=/opt/homebrew HOMEBREW_TEMP=/tmp/mansoor_almarzooqi/Homebrew/Temp INFOPATH=/opt/homebrew/share/info:/usr/local/share/info:/opt/homebrew/share/info:/usr/local/share/info: LANG=C.UTF-8 LESS=-R LOGNAME=mansoor_almarzooqi LSCOLORS=Gxfxcxdxbxegedabagacad LS_COLORS=di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43 MallocNanoZone=0 ORIGINAL_XDG_CURRENT_DESKTOP=undefined OSLogRateLimit=64 PAGER=less PATH=/Users/mansoor_almarzooqi/.antigravity/antigravity/bin:/Users/mansoor_almarzooqi/.brew/bin:/Users/mansoor_almarzooqi/goinfre/homebrew/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/X11/bin:/Library/Apple/usr/bin:/usr/local/share/dotnet:/Users/mansoor_almarzooqi/.dotnet/tools:/Users/mansoor_almarzooqi/.local/bin:/Users/mansoor_almarzooqi/.local/bin:/Users/mansoor_almarzooqi/42-ValgrindContainer PWD=/Users/mansoor_almarzooqi/Desktop/MY_minishell_project_GitHub/minishell/minishell_tester SHELL=/bin/zsh SSH_AUTH_SOCK=/private/tmp/com.apple.launchd.VvQpIfw6c9/Listeners TERM=xterm-256color TERM_PROGRAM=vscode TERM_PROGRAM_VERSION=1.96.2 TMPDIR=/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/ USER=mansoor_almarzooqi USER_ZDOTDIR=/Users/mansoor_almarzooqi VSCODE_GIT_ASKPASS_EXTRA_ARGS= VSCODE_GIT_ASKPASS_MAIN=/private/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/AppTranslocation/916872CE-DCDB-449A-BFD8-7200145EEC68/d/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js VSCODE_GIT_ASKPASS_NODE=/private/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/AppTranslocation/916872CE-DCDB-449A-BFD8-7200145EEC68/d/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) VSCODE_GIT_IPC_HANDLE=/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/vscode-git-4dfaea11d1.sock VSCODE_INJECTION=1 XPC_FLAGS=0x0 XPC_SERVICE_NAME=0 ZDOTDIR=/Users/mansoor_almarzooqi ZSH=/Users/mansoor_almarzooqi/.oh-my-zsh _=../minishell __CFBundleIdentifier=com.microsoft.VSCode __CF_USER_TEXT_ENCODING=0x1F5:0x0:0x0)
+bash output = (declare -x CLAUDE_CODE_SSE_PORT="50062" declare -x COLORTERM="truecolor" declare -x COMMAND_MODE="unix2003" declare -x DISPLAY="/private/tmp/com.apple.launchd.NtxTLe3G5d/org.xquartz:0" declare -x ENABLE_IDE_INTEGRATION="true" declare -x GIT_ASKPASS="/private/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/AppTranslocation/916872CE-DCDB-449A-BFD8-7200145EEC68/d/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass.sh" declare -x HOME="/Users/mansoor_almarzooqi" declare -x HOMEBREW_CACHE="/tmp/mansoor_almarzooqi/Homebrew/Caches" declare -x HOMEBREW_CELLAR="/opt/homebrew/Cellar" declare -x HOMEBREW_PREFIX="/opt/homebrew" declare -x HOMEBREW_REPOSITORY="/opt/homebrew" declare -x HOMEBREW_TEMP="/tmp/mansoor_almarzooqi/Homebrew/Temp" declare -x INFOPATH="/opt/homebrew/share/info:/usr/local/share/info:/opt/homebrew/share/info:/usr/local/share/info:" declare -x LANG="C.UTF-8" declare -x LESS="-R" declare -x LOGNAME="mansoor_almarzooqi" declare -x LSCOLORS="Gxfxcxdxbxegedabagacad" declare -x LS_COLORS="di=1;36:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43" declare -x MallocNanoZone="0" declare -x OLDPWD declare -x ORIGINAL_XDG_CURRENT_DESKTOP="undefined" declare -x OSLogRateLimit="64" declare -x PAGER="less" declare -x PATH="/Users/mansoor_almarzooqi/.antigravity/antigravity/bin:/Users/mansoor_almarzooqi/.brew/bin:/Users/mansoor_almarzooqi/goinfre/homebrew/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/X11/bin:/Library/Apple/usr/bin:/usr/local/share/dotnet:/Users/mansoor_almarzooqi/.dotnet/tools:/Users/mansoor_almarzooqi/.local/bin:/Users/mansoor_almarzooqi/.local/bin:/Users/mansoor_almarzooqi/42-ValgrindContainer" declare -x PWD="/Users/mansoor_almarzooqi/Desktop/MY_minishell_project_GitHub/minishell/minishell_tester" declare -x SHELL="/bin/zsh" declare -x SSH_AUTH_SOCK="/private/tmp/com.apple.launchd.VvQpIfw6c9/Listeners" declare -x TERM="xterm-256color" declare -x TERM_PROGRAM="vscode" declare -x TERM_PROGRAM_VERSION="1.96.2" declare -x TMPDIR="/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/" declare -x USER="mansoor_almarzooqi" declare -x USER_ZDOTDIR="/Users/mansoor_almarzooqi" declare -x VSCODE_GIT_ASKPASS_EXTRA_ARGS="" declare -x VSCODE_GIT_ASKPASS_MAIN="/private/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/AppTranslocation/916872CE-DCDB-449A-BFD8-7200145EEC68/d/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js" declare -x VSCODE_GIT_ASKPASS_NODE="/private/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/AppTranslocation/916872CE-DCDB-449A-BFD8-7200145EEC68/d/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)" declare -x VSCODE_GIT_IPC_HANDLE="/var/folders/67/426psbzx2ng37qlgtftt2pq40000gn/T/vscode-git-4dfaea11d1.sock" declare -x VSCODE_INJECTION="1" declare -x XPC_FLAGS="0x0" declare -x XPC_SERVICE_NAME="0" declare -x ZDOTDIR="/Users/mansoor_almarzooqi" declare -x ZSH="/Users/mansoor_almarzooqi/.oh-my-zsh")
+Test   7: ✅⚠️  exit 9223372036854775807 
+mini error = ( numeric argument required)
+bash error = ()
+Test   8: ✅ exit 9223372036854775808 
+Test   9: ❌ exit -9223372036854775807 
+mini exit code = 255
+bash exit code = 1
+mini error = ( numeric argument required)
+bash error = ()
+Test  10: ❌ exit -9223372036854775808 
+mini exit code = 255
+bash exit code = 0
+mini error = ( numeric argument required)
+bash error = ()
+Test  11: ✅ exit -9223372036854775809 
+4/11
+😭 😭 😭
+➜  minishell_tester git:(main) ✗ 
