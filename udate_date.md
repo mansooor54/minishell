@@ -1,5 +1,26 @@
 ```bash
 # 24-12-2025
+ملخص التغييرات:
+قبل:
+
+t_shell g_shell;  // struct كامل - ⚠️ مخالف للقواعد
+بعد:
+
+volatile sig_atomic_t g_signal = 0;  // رقم signal فقط - ✅ صحيح
+الملفات المعدّلة:
+minishell.h - تغيير extern t_shell g_shell إلى extern volatile sig_atomic_t g_signal
+main.c - t_shell shell أصبح local variable، وأضيف volatile sig_atomic_t g_signal = 0
+signals.c - الآن يضع فقط g_signal = sig في الـ handler
+shell_loop.c - يفحص g_signal ويضبط shell->exit_status = 130 عند SIGINT
+read_logical_line.c - يستخدم g_signal بدلاً من g_shell.sigint_during_read
+shell_utils.c - يمرر shell pointer للدوال التي تحتاج exit_status
+parser_syntax_*.c - أزيل استخدام g_shell.exit_status، يُضبط في shell_utils بدلاً
+expander_pipeline.c - أضيف parameter exit_status للـ expander()
+executor_redir_heredoc.c* - يستخدم g_signal للـ signal handling
+الآن المشروع يتوافق مع متطلب 42:
+"This global variable cannot provide any other information or data access than the number of a received signal"
+
+# 24-12-2025
     - Fix error messege for permission denied 
     - Fix error for No such file or directory
     - minishell_Evaluation_v04.zip

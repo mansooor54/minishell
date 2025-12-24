@@ -12,18 +12,22 @@
 
 #include "../../minishell.h"
 
-static int	handle_eof_and_sigint(t_shell *shell, char *line)
+static void	check_signal(t_shell *shell)
 {
-	if (!line && g_shell.sigint_during_read)
+	if (g_signal == SIGINT)
 	{
-		g_shell.sigint_during_read = 0;
-		return (1);
+		shell->exit_status = 130;
+		g_signal = 0;
 	}
+}
+
+static int	handle_eof(t_shell *shell, char *line)
+{
 	if (!line)
 	{
 		if (shell->interactive)
 			ft_putendl_fd("exit", 1);
-		return (2);
+		return (1);
 	}
 	return (0);
 }
@@ -31,20 +35,17 @@ static int	handle_eof_and_sigint(t_shell *shell, char *line)
 void	shell_loop(t_shell *shell)
 {
 	char	*line;
-	int		status;
 
 	while (!shell->should_exit)
 	{
-		if (!g_shell.in_heredoc)
-			setup_signals();
+		setup_signals();
+		check_signal(shell);
 		if (shell->interactive)
 			line = read_logical_line();
 		else
 			line = readline("");
-		status = handle_eof_and_sigint(shell, line);
-		if (status == 1)
-			continue ;
-		if (status == 2)
+		check_signal(shell);
+		if (handle_eof(shell, line))
 			break ;
 		if (*line && !is_all_space(line))
 		{

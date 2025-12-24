@@ -39,11 +39,11 @@ void	expand_pipeline_cmds(t_cmd *cmds, t_env *env, int exit_status)
 	}
 }
 
-void	expander(t_pipeline *pipeline, t_env *env)
+void	expander(t_pipeline *pipeline, t_env *env, int exit_status)
 {
 	while (pipeline)
 	{
-		expand_pipeline_cmds(pipeline->cmds, env, g_shell.exit_status);
+		expand_pipeline_cmds(pipeline->cmds, env, exit_status);
 		pipeline = pipeline->next;
 	}
 }

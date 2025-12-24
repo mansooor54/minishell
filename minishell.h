@@ -21,6 +21,7 @@
 # include <sys/wait.h>
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <sys/ioctl.h>
 # include <fcntl.h>
 # include <signal.h>
 # include <termios.h>
@@ -148,8 +149,8 @@ typedef struct s_quote_ctx
 	char	*res;
 }	t_quote_ctx;
 
-/* Global variable */
-extern t_shell	g_shell;
+/* Global variable - only for signal number (42 norm requirement) */
+extern volatile sig_atomic_t	g_signal;
 
 /* ===================== MAIN & CORE ===================== */
 int			main(int argc, char **argv, char **envp);
@@ -198,7 +199,7 @@ int			check_control_operator(t_token *t, t_token *next);
 int			check_semicolon(t_token *t, t_token *next);
 
 /* ===================== EXPANDER ===================== */
-void		expander(t_pipeline *pipeline, t_env *env);
+void		expander(t_pipeline *pipeline, t_env *env, int exit_status);
 char		*expand_variables(char *str, t_env *env, int exit_status);
 void		expand_arg(char **arg, t_env *env, int exit_status);
 void		expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status);

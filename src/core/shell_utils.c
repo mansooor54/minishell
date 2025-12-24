@@ -26,46 +26,37 @@ int	is_all_space(const char *s)
 	return (1);
 }
 
-static int	check_unclosed_quotes(char *line)
+static int	check_unclosed_quotes(char *line, t_shell *shell)
 {
 	if (has_unclosed_quotes(line))
 	{
 		ft_putendl_fd("minishell: syntax error: unclosed quotes", 2);
+		shell->exit_status = 258;
 		return (0);
 	}
 	return (1);
 }
 
-/*
-** NEW: Do not parse an incomplete logical line.
-** Bash never performs syntax checks mid-continuation.
-*/
-static int	is_incomplete_logical_line(char *line)
-{
-	if (needs_continuation(line))
-		return (1);
-	return (0);
-}
-
-static int	process_tokens(char *line, t_pipeline **pipeline)
+static int	process_tokens(char *line, t_pipeline **pl, t_shell *shell)
 {
 	t_token	*tokens;
 
-	if (is_incomplete_logical_line(line))
+	if (needs_continuation(line))
 		return (0);
-	if (!check_unclosed_quotes(line))
+	if (!check_unclosed_quotes(line, shell))
 		return (0);
 	tokens = lexer(line);
 	if (!tokens)
 		return (0);
-	if (!validate_syntax(tokens, &g_shell))
+	if (!validate_syntax(tokens, NULL))
 	{
+		shell->exit_status = 258;
 		free_tokens(tokens);
 		return (0);
 	}
-	*pipeline = parser(tokens);
+	*pl = parser(tokens);
 	free_tokens(tokens);
-	return (*pipeline != NULL);
+	return (*pl != NULL);
 }
 
 void	process_line(char *line, t_shell *shell)
@@ -76,7 +67,7 @@ void	process_line(char *line, t_shell *shell)
 		return ;
 	if (needs_continuation(line))
 		return ;
-	if (!process_tokens(line, &pipeline))
+	if (!process_tokens(line, &pipeline, shell))
 		return ;
 	executor(pipeline, shell);
 	free_pipeline(pipeline);

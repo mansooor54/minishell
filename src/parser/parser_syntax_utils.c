@@ -12,7 +12,6 @@
 
 #include "../../minishell.h"
 
-/* helper: is a separator token (for syntax) */
 int	is_separator_token(t_token *t)
 {
 	if (!t)
@@ -28,44 +27,37 @@ int	is_separator_token(t_token *t)
 	return (0);
 }
 
-/* Helper: check redirection pair errors */
 int	check_redirection_pair(t_token *t, t_token *next)
 {
 	if (is_redirection(t) && is_redirection(next))
 	{
 		print_syntax_error(next);
-		g_shell.exit_status = 258;
 		return (0);
 	}
 	if (is_redirection(t) && !is_valid_word(next))
 	{
 		print_syntax_error(next);
-		g_shell.exit_status = 258;
 		return (0);
 	}
 	return (1);
 }
 
-/* Helper: check control operator errors */
 int	check_control_operator(t_token *t, t_token *next)
 {
 	if (is_control_operator(t) && !is_valid_word(next) && !is_redirection(next))
 	{
 		print_syntax_error(next);
-		g_shell.exit_status = 258;
 		return (0);
 	}
 	return (1);
 }
 
-/* Helper: check semicolon errors */
 int	check_semicolon(t_token *t, t_token *next)
 {
 	if (t->type == TOKEN_SEMICOLON
 		&& (is_separator_token(next) || is_redirection(next)))
 	{
 		print_syntax_error(next);
-		g_shell.exit_status = 258;
 		return (0);
 	}
 	return (1);

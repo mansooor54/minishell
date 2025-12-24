@@ -38,11 +38,7 @@ int	check_heredoc_end(char *line, char *clean)
 
 char	*get_expanded_line(char *line, int quoted)
 {
-	char	*exp;
-
 	if (quoted)
-		exp = ft_strdup(line);
-	else
-		exp = expand_variables(line, g_shell.env, g_shell.exit_status);
-	return (exp);
+		return (ft_strdup(line));
+	return (ft_strdup(line));
 }

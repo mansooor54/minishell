@@ -12,18 +12,14 @@
 
 #include "../../minishell.h"
 
-/* ************************************************************************** */
-/*                         2.  READ ONE LINE SAFELY                           */
-/* ************************************************************************** */
-
 static char	*read_one_line(const char *prompt)
 {
 	char	*line;
 
-	g_shell.sigint_during_read = 0;
+	g_signal = 0;
 	rl_done = 0;
 	line = readline(prompt);
-	if (g_shell.sigint_during_read)
+	if (g_signal == SIGINT)
 	{
 		if (line)
 			free(line);
@@ -32,15 +28,10 @@ static char	*read_one_line(const char *prompt)
 	return (line);
 }
 
-/* ************************************************************************** */
-/*                     3.  FULL BASH-LIKE LOGICAL LINE READER                 */
-/* ************************************************************************** */
-
 static char	*handle_continuation_error(char *line)
 {
 	free(line);
 	ft_putendl_fd("minishell: syntax error: unexpected end of file", 2);
-	g_shell.exit_status = 258;
 	return (ft_strdup(""));
 }
 
@@ -48,10 +39,8 @@ static char	*process_continuation(char *line)
 {
 	char	*more;
 
-	g_shell.in_continuation = 1;
 	more = read_one_line("> ");
-	g_shell.in_continuation = 0;
-	if (g_shell.sigint_during_read)
+	if (g_signal == SIGINT)
 	{
 		free(line);
 		if (more)
@@ -77,8 +66,6 @@ char	*read_logical_line(void)
 		line = process_continuation(line);
 		if (!line)
 			return (NULL);
-		if (!*line && g_shell.exit_status == 258)
-			return (line);
 	}
 	return (line);
 }

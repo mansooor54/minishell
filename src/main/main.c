@@ -12,21 +12,23 @@
 
 #include "../../minishell.h"
 
-t_shell	g_shell;
+volatile sig_atomic_t	g_signal = 0;
 
 int	main(int argc, char **argv, char **envp)
 {
+	t_shell	shell;
+
 	(void)argc;
 	(void)argv;
 	write(1, "\033[2J\033[H", 7);
 	print_logo();
-	init_shell(&g_shell, envp);
+	init_shell(&shell, envp);
 	setup_signals();
-	history_init(&g_shell);
-	shell_loop(&g_shell);
-	history_save(&g_shell);
+	history_init(&shell);
+	shell_loop(&shell);
+	history_save(&shell);
 	rl_clear_history();
-	free_env(g_shell.env);
-	free(g_shell.history_path);
-	return (g_shell.exit_status);
+	free_env(shell.env);
+	free(shell.history_path);
+	return (shell.exit_status);
 }

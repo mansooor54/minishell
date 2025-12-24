@@ -30,7 +30,7 @@ static int	process_heredoc_line(int pipe_fd, char *clean, int quoted)
 	char	*line;
 
 	line = readline("> ");
-	if (g_shell.heredoc_sigint)
+	if (g_signal == SIGINT)
 	{
 		free(line);
 		return (1);
@@ -55,7 +55,7 @@ static int	read_heredoc_lines(int pipe_fd, char *clean, int quoted)
 
 	while (1)
 	{
-		if (g_shell.heredoc_sigint)
+		if (g_signal == SIGINT)
 			break ;
 		result = process_heredoc_line(pipe_fd, clean, quoted);
 		if (result != 0)
@@ -67,12 +67,11 @@ static int	read_heredoc_lines(int pipe_fd, char *clean, int quoted)
 static int	finalize_heredoc(int *pipe_fd)
 {
 	close(pipe_fd[1]);
-	g_shell.in_heredoc = 0;
 	setup_signals();
-	if (g_shell.heredoc_sigint)
+	if (g_signal == SIGINT)
 	{
 		close(pipe_fd[0]);
-		g_shell.exit_status = 130;
+		g_signal = 0;
 		return (-1);
 	}
 	dup2(pipe_fd[0], STDIN_FILENO);
@@ -94,8 +93,7 @@ int	handle_heredoc(char *delimiter)
 		cleanup_pipe(pipe_fd);
 		return (-1);
 	}
-	g_shell.in_heredoc = 1;
-	g_shell.heredoc_sigint = 0;
+	g_signal = 0;
 	setup_signals();
 	if (read_heredoc_lines(pipe_fd[1], clean, quoted) == -1)
 	{
