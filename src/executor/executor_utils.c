@@ -50,7 +50,7 @@ int	check_execution_permission(char *cmd, char *path, t_shell *shell)
 	{
 		ft_putstr_fd("minishell: ", 2);
 		ft_putstr_fd(cmd, 2);
-		ft_putendl_fd(": Is a directory", 2);
+		ft_putendl_fd(": is a directory", 2);
 		shell->exit_status = 126;
 		return (0);
 	}

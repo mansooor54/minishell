@@ -43,7 +43,8 @@ int	handle_output(char *file, int append)
 	{
 		ft_putstr_fd("minishell: ", 2);
 		ft_putstr_fd(file, 2);
-		ft_putendl_fd(": Permission denied", 2);
+		ft_putstr_fd(": ", 2);
+		ft_putendl_fd(strerror(errno), 2);
 		return (-1);
 	}
 	dup2(fd, STDOUT_FILENO);
