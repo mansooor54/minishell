@@ -36,9 +36,9 @@ int	check_heredoc_end(char *line, char *clean)
 	return (0);
 }
 
-char	*get_expanded_line(char *line, int quoted)
+char	*get_expanded_line(char *line, int quoted, t_env *env, int exit_status)
 {
 	if (quoted)
 		return (ft_strdup(line));
-	return (ft_strdup(line));
+	return (expand_variables(line, env, exit_status));
 }

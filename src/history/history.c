@@ -6,25 +6,13 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 14:41:56 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/12/25 00:00:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-static int	is_blank(const char *s)
-{
-	int	i;
-
-	if (!s)
-		return (1);
-	i = 0;
-	while (s[i] == ' ' || s[i] == '\t')
-		i++;
-	return (s[i] == '\0');
-}
-
-static char	*history_path_from_env(t_env *env)
+char	*history_path_from_env(t_env *env)
 {
 	char	*home;
 	char	*p;
@@ -41,32 +29,42 @@ static char	*history_path_from_env(t_env *env)
 	return (p);
 }
 
-int	history_init(t_shell *shell)
+void	free_history(t_hist *hist)
 {
-	shell->history_path = history_path_from_env(shell->env);
-	if (!shell->history_path)
-		return (0);
-	read_history(shell->history_path);
-	stifle_history(1000);
-	return (1);
+	t_hist	*tmp;
+
+	while (hist)
+	{
+		tmp = hist->next;
+		free(hist->line);
+		free(hist);
+		hist = tmp;
+	}
 }
 
-void	history_add_line(const char *line)
+void	add_hist_node(t_shell *shell, char *line)
 {
-	HIST_ENTRY	*last;
+	t_hist	*new;
+	t_hist	*curr;
 
-	if (is_blank(line))
+	new = malloc(sizeof(t_hist));
+	if (!new)
 		return ;
-	last = NULL;
-	if (history_length > 0)
-		last = history_get(history_length);
-	if (!last || ft_strcmp(last->line, line) != 0)
-		add_history((char *)line);
-}
-
-void	history_save(t_shell *shell)
-{
-	if (!shell->history_path)
+	new->line = ft_strdup(line);
+	new->next = NULL;
+	if (!new->line)
+	{
+		free(new);
 		return ;
-	write_history(shell->history_path);
+	}
+	if (!shell->history)
+		shell->history = new;
+	else
+	{
+		curr = shell->history;
+		while (curr->next)
+			curr = curr->next;
+		curr->next = new;
+	}
+	shell->hist_count++;
 }

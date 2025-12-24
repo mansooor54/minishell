@@ -14,7 +14,7 @@
 
 static void	execute_child_process(t_cmd *cmd, t_shell *shell, char *path)
 {
-	if (setup_redirections(cmd->redirs) == -1)
+	if (setup_redirections(cmd->redirs, shell) == -1)
 		exit(1);
 	execve(path, cmd->args, env_to_array(shell->env));
 	if (errno == EACCES)

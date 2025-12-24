@@ -16,7 +16,8 @@ void	expand_redirections(t_redir *redir, t_env *env, int exit_status)
 {
 	while (redir)
 	{
-		expand_arg(&redir->file, env, exit_status);
+		if (redir->type != TOKEN_REDIR_HEREDOC)
+			expand_arg(&redir->file, env, exit_status);
 		redir = redir->next;
 	}
 }

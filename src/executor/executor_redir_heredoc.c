@@ -12,20 +12,20 @@
 
 #include "../../minishell.h"
 
-static int	write_heredoc_line(int pipe_fd, char *line, int quoted)
+static int	write_heredoc_line(int fd, char *ln, int qt, t_shell *sh)
 {
 	char	*exp;
 
-	exp = get_expanded_line(line, quoted);
+	exp = get_expanded_line(ln, qt, sh->env, sh->exit_status);
 	if (!exp)
 		return (-1);
-	write(pipe_fd, exp, ft_strlen(exp));
-	write(pipe_fd, "\n", 1);
+	write(fd, exp, ft_strlen(exp));
+	write(fd, "\n", 1);
 	free(exp);
 	return (0);
 }
 
-static int	process_heredoc_line(int pipe_fd, char *clean, int quoted)
+static int	process_heredoc_line(int fd, char *cln, int qt, t_shell *sh)
 {
 	char	*line;
 
@@ -35,12 +35,12 @@ static int	process_heredoc_line(int pipe_fd, char *clean, int quoted)
 		free(line);
 		return (1);
 	}
-	if (check_heredoc_end(line, clean))
+	if (check_heredoc_end(line, cln))
 	{
 		free(line);
 		return (1);
 	}
-	if (write_heredoc_line(pipe_fd, line, quoted) == -1)
+	if (write_heredoc_line(fd, line, qt, sh) == -1)
 	{
 		free(line);
 		return (-1);
@@ -49,7 +49,7 @@ static int	process_heredoc_line(int pipe_fd, char *clean, int quoted)
 	return (0);
 }
 
-static int	read_heredoc_lines(int pipe_fd, char *clean, int quoted)
+static int	read_heredoc_lines(int fd, char *cln, int qt, t_shell *sh)
 {
 	int	result;
 
@@ -57,7 +57,7 @@ static int	read_heredoc_lines(int pipe_fd, char *clean, int quoted)
 	{
 		if (g_signal == SIGINT)
 			break ;
-		result = process_heredoc_line(pipe_fd, clean, quoted);
+		result = process_heredoc_line(fd, cln, qt, sh);
 		if (result != 0)
 			return (result);
 	}
@@ -66,6 +66,8 @@ static int	read_heredoc_lines(int pipe_fd, char *clean, int quoted)
 
 static int	finalize_heredoc(int *pipe_fd)
 {
+	int	ret;
+
 	close(pipe_fd[1]);
 	setup_signals();
 	if (g_signal == SIGINT)
@@ -74,12 +76,14 @@ static int	finalize_heredoc(int *pipe_fd)
 		g_signal = 0;
 		return (-1);
 	}
-	dup2(pipe_fd[0], STDIN_FILENO);
+	ret = dup2(pipe_fd[0], STDIN_FILENO);
 	close(pipe_fd[0]);
+	if (ret == -1)
+		return (-1);
 	return (0);
 }
 
-int	handle_heredoc(char *delimiter)
+int	handle_heredoc(char *delimiter, t_shell *shell)
 {
 	int		pipe_fd[2];
 	int		quoted;
@@ -95,7 +99,7 @@ int	handle_heredoc(char *delimiter)
 	}
 	g_signal = 0;
 	setup_signals();
-	if (read_heredoc_lines(pipe_fd[1], clean, quoted) == -1)
+	if (read_heredoc_lines(pipe_fd[1], clean, quoted, shell) == -1)
 	{
 		free(clean);
 		cleanup_pipe(pipe_fd);

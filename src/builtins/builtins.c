@@ -60,6 +60,6 @@ int	execute_builtin(t_cmd *cmd, t_shell *shell)
 	if (ft_strcmp(cmd->args[0], "exit") == 0)
 		return (builtin_exit(cmd->args, shell));
 	if (ft_strcmp(cmd->args[0], "history") == 0)
-		return (builtin_history(cmd->args));
+		return (builtin_history(cmd->args, shell));
 	return (0);
 }

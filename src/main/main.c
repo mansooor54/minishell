@@ -28,6 +28,7 @@ int	main(int argc, char **argv, char **envp)
 	shell_loop(&shell);
 	history_save(&shell);
 	rl_clear_history();
+	free_history(shell.history);
 	free_env(shell.env);
 	free(shell.history_path);
 	return (shell.exit_status);

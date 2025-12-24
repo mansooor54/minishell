@@ -60,7 +60,7 @@ static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
 	expand_child_cmd(cmd, shell);
 	if (!cmd->args[0] || !cmd->args[0][0])
 		exit(0);
-	if (setup_redirections(cmd->redirs) == -1)
+	if (setup_redirections(cmd->redirs, shell) == -1)
 		exit(1);
 	if (is_builtin(cmd->args[0]))
 		exit(execute_builtin(cmd, shell));

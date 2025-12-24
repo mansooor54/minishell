@@ -66,7 +66,7 @@ EXECUTOR = executor_child_fds executor_child_run \
 EXPANDER = expander_core expander_pipeline expander_quotes \
             expander_utils expander_vars expander_utils_helpers
 
-HISTORY = builtin_history history
+HISTORY = builtin_history history history_utils history_load
 
 LEXER = lexer_operator_type lexer_operator lexer_unclose \
          lexer_utils lexer

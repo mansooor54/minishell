@@ -11,16 +11,7 @@
 /* ************************************************************************** */
 
 #include "../../minishell.h"
-/*
-** init_pipeline - Initialize pipeline execution
-**
-** Allocates memory for pid array.
-**
-** @param cmd_count: Number of commands
-** @param pids: Pointer to store allocated pid array
-**
-** Return: 0 on success, -1 on error
-*/
+/* allocate pid array for pipeline */
 int	init_pipeline(int cmd_count, pid_t **pids)
 {
 	*pids = malloc(sizeof(pid_t) * cmd_count);
@@ -91,7 +82,7 @@ static int	handle_empty_command(t_cmd *cmd, t_pipe_ctx *ctx, int index)
 	}
 	if (pid == 0)
 	{
-		if (setup_redirections(cmd->redirs) < 0)
+		if (setup_redirections(cmd->redirs, ctx->shell) < 0)
 			exit(1);
 		exit(0);
 	}

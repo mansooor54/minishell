@@ -12,7 +12,7 @@
 
 #include "../../minishell.h"
 
-static int	process_single_redirection(t_redir *redir)
+static int	process_single_redirection(t_redir *redir, t_shell *shell)
 {
 	if (redir->type == TOKEN_REDIR_IN)
 		return (handle_input(redir->file));
@@ -21,15 +21,15 @@ static int	process_single_redirection(t_redir *redir)
 	else if (redir->type == TOKEN_REDIR_APPEND)
 		return (handle_output(redir->file, 1));
 	else if (redir->type == TOKEN_REDIR_HEREDOC)
-		return (handle_heredoc(redir->file));
+		return (handle_heredoc(redir->file, shell));
 	return (0);
 }
 
-int	setup_redirections(t_redir *redirs)
+int	setup_redirections(t_redir *redirs, t_shell *shell)
 {
 	while (redirs)
 	{
-		if (process_single_redirection(redirs) == -1)
+		if (process_single_redirection(redirs, shell) == -1)
 			return (-1);
 		redirs = redirs->next;
 	}

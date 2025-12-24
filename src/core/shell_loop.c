@@ -50,7 +50,7 @@ void	shell_loop(t_shell *shell)
 		if (*line && !is_all_space(line))
 		{
 			if (shell->interactive)
-				history_add_line(line);
+				history_add_line(line, shell);
 			process_line(line, shell);
 		}
 		free(line);

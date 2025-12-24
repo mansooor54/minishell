@@ -6,27 +6,28 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/12 14:33:12 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/12/25 00:00:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-int	builtin_history(char **args)
+int	builtin_history(char **args, t_shell *shell)
 {
-	HIST_ENTRY	**list;
-	int			i;
+	t_hist	*curr;
+	int		i;
 
 	(void)args;
-	list = history_list();
-	if (!list)
+	if (!shell->history)
 		return (0);
-	i = 0;
-	while (list[i])
+	curr = shell->history;
+	i = 1;
+	while (curr)
 	{
-		ft_putnbr_fd(i + 1, 1);
+		ft_putnbr_fd(i, 1);
 		ft_putstr_fd("  ", 1);
-		ft_putendl_fd(list[i]->line, 1);
+		ft_putendl_fd(curr->line, 1);
+		curr = curr->next;
 		i++;
 	}
 	return (0);

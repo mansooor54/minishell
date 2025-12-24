@@ -25,7 +25,11 @@ int	handle_input(char *file)
 		ft_putendl_fd(strerror(errno), 2);
 		return (-1);
 	}
-	dup2(fd, STDIN_FILENO);
+	if (dup2(fd, STDIN_FILENO) == -1)
+	{
+		close(fd);
+		return (-1);
+	}
 	close(fd);
 	return (0);
 }
@@ -48,7 +52,11 @@ int	handle_output(char *file, int append)
 		ft_putendl_fd(strerror(errno), 2);
 		return (-1);
 	}
-	dup2(fd, STDOUT_FILENO);
+	if (dup2(fd, STDOUT_FILENO) == -1)
+	{
+		close(fd);
+		return (-1);
+	}
 	close(fd);
 	return (0);
 }

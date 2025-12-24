@@ -100,6 +100,12 @@ typedef struct s_env
 	struct s_env	*next;
 }	t_env;
 
+typedef struct s_hist
+{
+	char			*line;
+	struct s_hist	*next;
+}	t_hist;
+
 typedef struct s_shell
 {
 	t_env	*env;
@@ -107,6 +113,8 @@ typedef struct s_shell
 	int		should_exit;
 	int		sigint_during_read;
 	char	*history_path;
+	t_hist	*history;
+	int		hist_count;
 	int		in_heredoc;
 	int		heredoc_sigint;
 	int		eof_count;
@@ -236,11 +244,11 @@ int			handle_path_errors(char *cmd, char *path, t_shell *shell);
 int			check_execution_permission(char *cmd, char *path, t_shell *shell);
 pid_t		create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io);
 int			setup_child_fds(int pipefd[2], int prev_read_fd, int has_next);
-int			setup_redirections(t_redir *redirs);
-int			handle_heredoc(char *delimiter);
+int			setup_redirections(t_redir *redirs, t_shell *shell);
+int			handle_heredoc(char *delimiter, t_shell *shell);
 char		*clean_delimiter(char *delim, int *quoted);
 int			check_heredoc_end(char *line, char *clean);
-char		*get_expanded_line(char *line, int quoted);
+char		*get_expanded_line(char *line, int quoted, t_env *env, int es);
 int			handle_input(char *file);
 int			handle_output(char *file, int append);
 char		*find_executable(char *cmd, t_env *env);
@@ -266,7 +274,6 @@ void		print_sorted_export(t_env *env, char **keys, int count);
 int			builtin_unset(char **args, t_env **env);
 int			builtin_env(t_env *env);
 int			builtin_exit(char **args, t_shell *shell);
-int			builtin_history(char **args);
 
 /* ===================== ENVIRONMENT ===================== */
 t_env		*init_env(char **envp);
@@ -288,9 +295,13 @@ void		handle_sigquit(int sig);
 void		handle_sigint_heredoc(int sig);
 
 /* ===================== HISTORY ===================== */
-void		history_add_line(const char *line);
+void		history_add_line(const char *line, t_shell *shell);
 int			history_init(t_shell *shell);
 void		history_save(t_shell *shell);
+void		free_history(t_hist *hist);
+int			builtin_history(char **args, t_shell *shell);
+char		*history_path_from_env(t_env *env);
+void		add_hist_node(t_shell *shell, char *line);
 
 /* ===================== UTILS ===================== */
 void		free_array(char **arr);

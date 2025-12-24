@@ -33,14 +33,15 @@ static void	execute_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 	if (pid == 0)
 	{
 		setup_child_signals();
-		if (setup_redirections(cmd->redirs) == -1)
+		if (setup_redirections(cmd->redirs, shell) == -1)
 			exit(1);
 		exit(execute_builtin(cmd, shell));
 	}
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-	waitpid(pid, &status, 0);
-	if (WIFEXITED(status))
+	if (waitpid(pid, &status, 0) == -1)
+		shell->exit_status = 1;
+	else if (WIFEXITED(status))
 		shell->exit_status = WEXITSTATUS(status);
 	signal(SIGINT, handle_sigint);
 	signal(SIGQUIT, handle_sigquit);
