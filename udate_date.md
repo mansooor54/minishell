@@ -7,6 +7,8 @@
     - Check leaks with env
     - Check leaks with quotes
     - Check leaks with error command
+    - modify history
+    - remove an allowed function and write own functions
     
 # 24-12-2025
 ملخص التغييرات:
