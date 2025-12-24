@@ -149,7 +149,7 @@ typedef struct s_quote_ctx
 	char	*res;
 }	t_quote_ctx;
 
-/* Global variable - only for signal number (42 norm requirement) */
+/* Global variable - only for signal number */
 extern volatile sig_atomic_t	g_signal;
 
 /* ===================== MAIN & CORE ===================== */

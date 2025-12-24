@@ -1,5 +1,14 @@
 ```bash
 # 24-12-2025
+    - Check leaks with export/unset
+    - Check leaks with redirections
+    - Check leaks with pipes
+    - Check leaks with cd
+    - Check leaks with env
+    - Check leaks with quotes
+    - Check leaks with error command
+    
+# 24-12-2025
 ملخص التغييرات:
 قبل:
 
