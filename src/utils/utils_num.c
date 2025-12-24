@@ -12,36 +12,30 @@
 
 #include "../../minishell.h"
 
-/*
-** Check if string is a valid number
-** Returns 1 if numeric, 0 otherwise
-*/
-int	is_numeric_overflow(char *str)
+static int	skip_whitespace_sign(char *str, int *sign)
 {
-	int					i;
-	int					sign;
-	unsigned long long	result;
-	unsigned long long	limit;
+	int	i;
 
 	i = 0;
-	sign = 1;
-	result = 0;
+	*sign = 1;
 	while (str[i] == 32 || (str[i] >= 9 && str[i] <= 13))
 		i++;
 	if (str[i] == '-' || str[i] == '+')
 	{
 		if (str[i] == '-')
-			sign = -1;
+			*sign = -1;
 		i++;
 	}
 	while (str[i] == '0')
 		i++;
-	if (ft_strlen(&str[i]) > 19)
-		return (1);
-	if (sign == -1)
-		limit = (unsigned long long)LONG_MAX + 1;
-	else
-		limit = (unsigned long long)LONG_MAX;
+	return (i);
+}
+
+static int	check_digit_overflow(char *str, int i, unsigned long long limit)
+{
+	unsigned long long	result;
+
+	result = 0;
 	while (str[i] >= '0' && str[i] <= '9')
 	{
 		if (result > limit / 10)
@@ -53,6 +47,22 @@ int	is_numeric_overflow(char *str)
 		i++;
 	}
 	return (0);
+}
+
+int	is_numeric_overflow(char *str)
+{
+	int					i;
+	int					sign;
+	unsigned long long	limit;
+
+	i = skip_whitespace_sign(str, &sign);
+	if (ft_strlen(&str[i]) > 19)
+		return (1);
+	if (sign == -1)
+		limit = (unsigned long long)LONG_MAX + 1;
+	else
+		limit = (unsigned long long)LONG_MAX;
+	return (check_digit_overflow(str, i, limit));
 }
 
 int	is_valid_number(char *str)

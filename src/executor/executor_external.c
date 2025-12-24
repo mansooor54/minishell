@@ -12,51 +12,6 @@
 
 #include "../../minishell.h"
 
-static int	handle_directory_check(char *cmd, t_shell *shell)
-{
-	struct stat	st;
-
-	if (stat(cmd, &st) == 0 && S_ISDIR(st.st_mode))
-	{
-		ft_putstr_fd("minishell: ", 2);
-		ft_putstr_fd(cmd, 2);
-		ft_putendl_fd(": is a directory", 2);
-		shell->exit_status = 126;
-		return (1);
-	}
-	return (0);
-}
-
-static int	handle_path_resolution(t_cmd *cmd, t_shell *shell, char **path)
-{
-	if (ft_strchr(cmd->args[0], '/'))
-	{
-		if (handle_directory_check(cmd->args[0], shell))
-			return (1);
-		if (access(cmd->args[0], F_OK) != 0)
-		{
-			ft_putstr_fd("minishell: ", 2);
-			ft_putstr_fd(cmd->args[0], 2);
-			ft_putstr_fd(": ", 2);
-			ft_putendl_fd(strerror(errno), 2);
-			shell->exit_status = 127;
-			return (1);
-		}
-		*path = ft_strdup(cmd->args[0]);
-	}
-	else
-	{
-		*path = find_executable(cmd->args[0], shell->env);
-	}
-	if (!*path)
-	{
-		cmd_not_found(cmd->args[0]);
-		shell->exit_status = 127;
-		return (1);
-	}
-	return (0);
-}
-
 static void	execute_child_process(t_cmd *cmd, t_shell *shell, char *path)
 {
 	if (setup_redirections(cmd->redirs) == -1)
@@ -80,13 +35,10 @@ static void	handle_parent_process(pid_t pid, t_shell *shell)
 		print_error("waitpid", strerror(errno));
 		shell->exit_status = 1;
 	}
-	else
-	{
-		if (WIFEXITED(status))
-			shell->exit_status = WEXITSTATUS(status);
-		else if (WIFSIGNALED(status))
-			shell->exit_status = 128 + WTERMSIG(status);
-	}
+	else if (WIFEXITED(status))
+		shell->exit_status = WEXITSTATUS(status);
+	else if (WIFSIGNALED(status))
+		shell->exit_status = 128 + WTERMSIG(status);
 	signal(SIGINT, handle_sigint);
 	signal(SIGQUIT, handle_sigquit);
 }

@@ -43,7 +43,7 @@ HEADER = minishell.h
 
 BUILTINS = builtin_cd_utils builtin_cd builtin_echo \
             builtin_env builtin_exit builtin_export \
-            builtin_pwd builtin_unset builtins
+            builtin_export_utils builtin_pwd builtin_unset builtins
 
 CORE = read_logical_line read_logical_line_utils shell_loop shell_utils join_continuation
 
@@ -57,7 +57,7 @@ PARSER = parser_check_token parser_error parser_pipeline \
 
 EXECUTOR = executor_child_fds executor_child_run \
             executor_commands executor_commands_utils executor_error executor_external \
-            executor_path_search executor_path_utils executor_path \
+            executor_external_utils executor_path_search executor_path_utils executor_path \
             executor_pipeline_loop executor_pipeline_run executor_pipeline_utils \
             executor_pipeline_helpers executor_pipeline executor_redir_heredoc \
             executor_redir_heredoc_utils executor_redir_io \

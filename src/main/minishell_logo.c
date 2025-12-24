@@ -31,6 +31,6 @@ void	print_logo(void)
 	printf("██████╗██████╗██████╗\n");
 	printf("╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝╚═════╝╚═╝  ╚═╝");
 	printf("╚═════╝╚═════╝╚═════╝\n");
-	printf("         Welcome to \033[1;33mMansoor MiniShell");
+	printf("         Welcome to \033[1;33mMansoor & Afaf MiniShell");
 	printf("\033[1;36m for 42 School 🇦🇪\033[0m\n\n");
 }

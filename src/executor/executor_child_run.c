@@ -12,14 +12,6 @@
 
 #include "../../minishell.h"
 
-static void	execute_builtin_child(t_cmd *cmd, t_shell *shell)
-{
-	int	exit_code;
-
-	exit_code = execute_builtin(cmd, shell);
-	exit(exit_code);
-}
-
 static void	execute_external_child(t_cmd *cmd, t_shell *shell, char *path)
 {
 	char	**envp;
@@ -38,35 +30,42 @@ static void	execute_external_child(t_cmd *cmd, t_shell *shell, char *path)
 	exit(126);
 }
 
-static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
+static void	run_external_cmd(t_cmd *cmd, t_shell *shell)
 {
 	char	*path;
 
-	if (!cmd || !cmd->args || !cmd->args[0])
-		exit(0);
+	path = find_executable(cmd->args[0], shell->env);
+	if (!path)
+	{
+		cmd_not_found(cmd->args[0]);
+		exit(127);
+	}
+	execute_external_child(cmd, shell, path);
+}
+
+static void	expand_child_cmd(t_cmd *cmd, t_shell *shell)
+{
 	if (!cmd->expanded)
 	{
 		expand_cmd_args(cmd, shell->env, shell->exit_status);
 		expand_redirections(cmd->redirs, shell->env, shell->exit_status);
 		cmd->expanded = 1;
 	}
+}
+
+static void	execute_cmd_child(t_cmd *cmd, t_shell *shell)
+{
+	if (!cmd || !cmd->args || !cmd->args[0])
+		exit(0);
+	expand_child_cmd(cmd, shell);
 	if (!cmd->args[0] || !cmd->args[0][0])
 		exit(0);
 	if (setup_redirections(cmd->redirs) == -1)
 		exit(1);
 	if (is_builtin(cmd->args[0]))
-		execute_builtin_child(cmd, shell);
+		exit(execute_builtin(cmd, shell));
 	else
-	{
-		path = find_executable(cmd->args[0], shell->env);
-		if (!path)
-		{
-			cmd_not_found(cmd->args[0]);
-			shell->exit_status = 127;
-			exit(127);
-		}
-		execute_external_child(cmd, shell, path);
-	}
+		run_external_cmd(cmd, shell);
 }
 
 pid_t	create_child_process(t_cmd *cmd, t_shell *shell, t_child_io *io)
