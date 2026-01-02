@@ -29,8 +29,6 @@ int	is_operator(char c)
 		return (1);
 	if (c == '&')
 		return (1);
-	if (c == ';')
-		return (1);
 	return (0);
 }
 
@@ -63,8 +61,7 @@ static int	measure_word(char *s)
 		}
 		if (in_quote && s[i] == in_quote)
 		{
-			if (!(in_quote == '"' && i > 0 && s[i - 1] == '\\'))
-				in_quote = 0;
+			in_quote = 0;
 			i++;
 			continue ;
 		}

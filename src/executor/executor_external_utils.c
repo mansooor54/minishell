@@ -40,6 +40,15 @@ int	handle_direct_path(char *cmd, t_shell *shell, char **path)
 		shell->exit_status = 127;
 		return (1);
 	}
+	if (access(cmd, X_OK) != 0)
+	{
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(cmd, 2);
+		ft_putstr_fd(": ", 2);
+		ft_putendl_fd(strerror(errno), 2);
+		shell->exit_status = 126;
+		return (1);
+	}
 	*path = ft_strdup(cmd);
 	return (0);
 }

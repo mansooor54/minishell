@@ -1,4 +1,22 @@
 ```bash
+# 25-12-2025
+   - All done. Here's a summary of the changes made: Removed Semicolon (;) Handling:
+   - Removed try_semicolon() call from lexer_operator.c
+   - Removed check_semicolon() function from parser_syntax_utils.c
+   - Removed check_semicolon() call from parser_syntax_check.c
+   - Removed try_semicolon and check_semicolon declarations from minishell.h
+   - Removed Backslash (\) Handling:
+   - Simplified expander_quotes.c - removed backslash escape handling
+   - Simplified read_logical_line_utils.c - removed trailing backslash continuation
+   - Simplified join_continuation.c - removed backslash removal logic
+   - Simplified lexer_unclose.c - removed escape logic in quote checking
+   - Simplified expander_utils.c - removed \$ escape handling
+   - Test Results:
+   - echo hello; world → outputs hello; world (semicolon treated as regular character)
+   - echo hello\world → outputs hello\world (backslash treated as regular character)
+   - Compilation successful
+   - Norminette passed on all modified files
+
 # 24-12-2025
     - Check leaks with export/unset
     - Check leaks with redirections
@@ -57,7 +75,7 @@ executor_redir_heredoc.c* - يستخدم g_signal للـ signal handling
     - Norminette Ok
     - bash-3.2$ cat << EOF
     - remove semicolon operator test
-```
+
 # 13-11-2025
 
     ** This function:
@@ -72,8 +90,6 @@ executor_redir_heredoc.c* - يستخدم g_signal للـ signal handling
     You should now see only a new line and a fresh
     minishell> prompt, with no ^C, just like bash.
 
-
-```bash
 # 12-11-2025
     - update Parser folder and Makefile
     - Norminette Ok

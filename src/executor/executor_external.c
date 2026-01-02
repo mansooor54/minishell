@@ -14,6 +14,8 @@
 
 static void	execute_child_process(t_cmd *cmd, t_shell *shell, char *path)
 {
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
 	if (setup_redirections(cmd->redirs, shell) == -1)
 		exit(1);
 	execve(path, cmd->args, env_to_array(shell->env));
@@ -38,7 +40,10 @@ static void	handle_parent_process(pid_t pid, t_shell *shell)
 	else if (WIFEXITED(status))
 		shell->exit_status = WEXITSTATUS(status);
 	else if (WIFSIGNALED(status))
+	{
 		shell->exit_status = 128 + WTERMSIG(status);
+		write(1, "\n", 1);
+	}
 	signal(SIGINT, handle_sigint);
 	signal(SIGQUIT, handle_sigquit);
 }

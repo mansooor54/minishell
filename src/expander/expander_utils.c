@@ -14,11 +14,6 @@
 
 void	process_dollar(t_exp_ctx *c)
 {
-	if (c->i > 0 && c->str[c->i - 1] == '\\' && c->in_quote != '\'')
-	{
-		c->result[c->j++] = c->str[c->i++];
-		return ;
-	}
 	if (c->in_quote == '\'')
 	{
 		c->result[c->j++] = c->str[c->i++];

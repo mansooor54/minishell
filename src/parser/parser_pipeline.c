@@ -40,8 +40,7 @@ t_cmd	*parse_pipe_sequence(t_token **tokens)
 
 	cmds = NULL;
 	while (*tokens && (*tokens)->type != TOKEN_AND
-		&& (*tokens)->type != TOKEN_OR
-		&& (*tokens)->type != TOKEN_SEMICOLON)
+		&& (*tokens)->type != TOKEN_OR)
 	{
 		new_cmd = parse_command(tokens);
 		if (!cmds)
@@ -84,9 +83,7 @@ void	set_logic_and_advance(t_pipeline *pl, t_token **tokens)
 {
 	if (!tokens || !*tokens)
 		return ;
-	if ((*tokens)->type == TOKEN_AND
-		|| (*tokens)->type == TOKEN_OR
-		|| (*tokens)->type == TOKEN_SEMICOLON)
+	if ((*tokens)->type == TOKEN_AND || (*tokens)->type == TOKEN_OR)
 	{
 		pl->logic_op = (*tokens)->type;
 		*tokens = (*tokens)->next;
@@ -101,8 +98,6 @@ t_pipeline	*parser(t_token *tokens)
 	head = NULL;
 	while (tokens)
 	{
-		while (tokens && tokens->type == TOKEN_SEMICOLON)
-			tokens = tokens->next;
 		if (!tokens || tokens->type == TOKEN_EOF)
 			break ;
 		node = create_pipeline();
@@ -111,8 +106,6 @@ t_pipeline	*parser(t_token *tokens)
 		append_pipeline(&head, node);
 		if (!tokens || tokens->type == TOKEN_EOF)
 			break ;
-		if (tokens->type == TOKEN_SEMICOLON)
-			tokens = tokens->next;
 	}
 	return (head);
 }

@@ -6,15 +6,11 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 09:15:37 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/03 11:55:37 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/12/25 00:00:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
-
-/* ************************************************************************** */
-/*                         1. SAFE STRING JOIN                                */
-/* ************************************************************************** */
 
 static size_t	get_safe_len(const char *s)
 {
@@ -54,36 +50,6 @@ static char	*str_join(const char *a, const char *b)
 	return (r);
 }
 
-/* ************************************************************************** */
-/*                         2. REMOVE "\\<newline>" LOGIC                      */
-/* ************************************************************************** */
-
-static void	remove_continuation_backslash(char *line)
-{
-	int	i;
-	int	last;
-	int	count;
-
-	if (!line)
-		return ;
-	i = (int)ft_strlen(line) - 1;
-	while (i >= 0 && (line[i] == ' ' || line[i] == '\t'))
-		i--;
-	last = i;
-	count = 0;
-	while (i >= 0 && line[i] == '\\')
-	{
-		count++;
-		i--;
-	}
-	if (count % 2 == 1 && last >= 0)
-		line[last] = '\0';
-}
-
-/* ************************************************************************** */
-/*                         3. MAIN PUBLIC FUNCTION                            */
-/* ************************************************************************** */
-
 char	*join_continuation(char *line, char *next)
 {
 	char	*r;
@@ -92,7 +58,6 @@ char	*join_continuation(char *line, char *next)
 		return (NULL);
 	if (!line)
 		return (ft_strdup(next));
-	remove_continuation_backslash(line);
 	while (*next == ' ' || *next == '\t' || *next == '\n')
 		next++;
 	r = str_join(line, next);

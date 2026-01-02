@@ -6,7 +6,7 @@
 /*   By: malmarzo <malmarzo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 15:10:00 by malmarzo          #+#    #+#             */
-/*   Updated: 2025/11/06 15:23:36 by malmarzo         ###   ########.fr       */
+/*   Updated: 2025/12/25 00:00:00 by malmarzo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,38 +33,6 @@ static int	handle_quote(t_quote_ctx *c, char *s)
 	return (0);
 }
 
-static void	handle_bs_outside(t_quote_ctx *c, char *s)
-{
-	if (s[c->i] == '\\' && !c->quote && s[c->i + 1])
-	{
-		c->res[c->j++] = s[c->i + 1];
-		c->i += 2;
-	}
-	else
-	{
-		c->res[c->j++] = s[c->i++];
-	}
-}
-
-static void	handle_bs_in_dq(t_quote_ctx *c, char *s)
-{
-	if (s[c->i] == '\\' && c->quote == '"' && s[c->i + 1])
-	{
-		if (s[c->i + 1] == '"' || s[c->i + 1] == '$'
-			|| s[c->i + 1] == '\\')
-		{
-			c->res[c->j++] = s[c->i + 1];
-			c->i += 2;
-		}
-		else
-		{
-			c->res[c->j++] = s[c->i++];
-		}
-	}
-	else
-		handle_bs_outside(c, s);
-}
-
 char	*remove_quotes(char *s)
 {
 	t_quote_ctx	c;
@@ -84,10 +52,7 @@ char	*remove_quotes(char *s)
 	{
 		if (handle_quote(&c, s))
 			continue ;
-		if (s[c.i] == '\\')
-			handle_bs_in_dq(&c, s);
-		else
-			c.res[c.j++] = s[c.i++];
+		c.res[c.j++] = s[c.i++];
 	}
 	c.res[c.j] = '\0';
 	return (res);

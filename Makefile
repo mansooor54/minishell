@@ -86,10 +86,13 @@ SRCS = $(addsuffix .c, $(addprefix src/builtins/, $(BUILTINS))) \
         $(addsuffix .c, $(addprefix src/lexer/, $(LEXER))) \
         $(addsuffix .c, $(addprefix src/parser/, $(PARSER))) \
         $(addsuffix .c, $(addprefix src/signals/, $(SIGNALS))) \
-        $(addsuffix .c, $(addprefix src/utils/, $(UTILS))) 
+        $(addsuffix .c, $(addprefix src/utils/, $(UTILS)))
+
+# Object files directory
+OBJ_DIR = obj
 
 # FIXED: Changed from OBJ = $(SRC:c=o) to OBJS = $(SRCS:.c=.o)
-OBJS = $(SRCS:.c=.o)
+OBJS = $(addprefix $(OBJ_DIR)/, $(SRCS:.c=.o))
 
 all: $(NAME)
 
@@ -100,7 +103,8 @@ $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) -o $(NAME) $(OBJS) $(LDFLAGS)  # FIXED: Using LDFLAGS instead of LIBFT
 	@echo "\n\033[0mDone !"
 
-%.o: %.c
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
 	@printf "\033[0;33mGenerating minishell objects... %-33.33s\r" $@
 	@${CC} ${CFLAGS} -c $< -o $@
 
@@ -108,14 +112,14 @@ clean:
 	@echo "\033[0;31mCleaning libft..."
 	@make clean -C libft/
 	@echo "\nRemoving binaries..."
-	@rm -f $(OBJS)  # FIXED: Using OBJS instead of OBJ
+	@rm -rf $(OBJ_DIR)
 	@echo "\033[0m"
 
 fclean:
 	@echo "\033[0;31mCleaning libft..."
 	@make fclean -C libft/
 	@echo "\nDeleting objects..."
-	@rm -f $(OBJS)  # FIXED: Using OBJS instead of OBJ
+	@rm -rf $(OBJ_DIR)
 	@echo "\nDeleting executable..."
 	@rm -f $(NAME)
 	@echo "\033[0m"

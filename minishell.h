@@ -46,7 +46,6 @@
 `>>>'"
 # define ERR_CONSECUTIVE_REDIR "minishell: syntax error near unexpected token \
 `>'"
-# define ERR_SEMICOLON "minishell: syntax error near unexpected token `;'"
 
 /* ===================== STRUCTURES ===================== */
 
@@ -60,7 +59,6 @@ typedef enum e_token_type
 	TOKEN_REDIR_OUT,
 	TOKEN_REDIR_APPEND,
 	TOKEN_REDIR_HEREDOC,
-	TOKEN_SEMICOLON,
 	TOKEN_EOF
 }	t_token_type;
 
@@ -183,7 +181,6 @@ t_token		*try_or_pipe(char **input);
 t_token		*try_and(char **input);
 t_token		*try_inredir(char **input);
 t_token		*try_outredir(char **input);
-t_token		*try_semicolon(char **input); /* ADDED */
 
 /* ===================== PARSER ===================== */
 t_pipeline	*parser(t_token *tokens);
@@ -204,7 +201,6 @@ int			tok_op_len(t_token *t);
 int			is_separator_token(t_token *t);
 int			check_redirection_pair(t_token *t, t_token *next);
 int			check_control_operator(t_token *t, t_token *next);
-int			check_semicolon(t_token *t, t_token *next);
 
 /* ===================== EXPANDER ===================== */
 void		expander(t_pipeline *pipeline, t_env *env, int exit_status);

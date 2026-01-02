@@ -20,8 +20,6 @@ static void	print_token_type_error(t_token *token)
 		ft_putendl_fd(ERR_AND, 2);
 	else if (token->type == TOKEN_OR)
 		ft_putendl_fd(ERR_OR, 2);
-	else if (token->type == TOKEN_SEMICOLON)
-		ft_putendl_fd(ERR_SEMICOLON, 2);
 	else if (token->type == TOKEN_REDIR_IN)
 		ft_putendl_fd(ERR_REDIR_IN, 2);
 	else if (token->type == TOKEN_REDIR_OUT)

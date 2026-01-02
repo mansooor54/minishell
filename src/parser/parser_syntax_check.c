@@ -18,8 +18,6 @@ static int	validate_token_pair(t_token *t, t_token *next)
 		return (0);
 	if (!check_control_operator(t, next))
 		return (0);
-	if (!check_semicolon(t, next))
-		return (0);
 	return (1);
 }
 
@@ -37,10 +35,7 @@ static int	validate_last_token(t_token *last)
 {
 	if (last && (is_separator_token(last) || is_redirection(last)))
 	{
-		if (last->type == TOKEN_SEMICOLON)
-			print_syntax_error(last);
-		else
-			print_syntax_error(NULL);
+		print_syntax_error(NULL);
 		return (0);
 	}
 	return (1);

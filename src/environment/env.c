@@ -83,5 +83,6 @@ void	init_shell(t_shell *shell, char **envp)
 	shell->env = init_env(envp);
 	shell->exit_status = 0;
 	shell->should_exit = 0;
-	rl_catch_signals = 0;
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
 }

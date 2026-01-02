@@ -17,7 +17,6 @@ static char	*read_one_line(const char *prompt)
 	char	*line;
 
 	g_signal = 0;
-	rl_done = 0;
 	line = readline(prompt);
 	if (g_signal == SIGINT)
 	{
