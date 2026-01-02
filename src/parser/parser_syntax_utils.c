@@ -10,17 +10,13 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 int	is_separator_token(t_token *t)
 {
 	if (!t)
 		return (0);
 	if (t->type == TOKEN_PIPE)
-		return (1);
-	if (t->type == TOKEN_AND)
-		return (1);
-	if (t->type == TOKEN_OR)
 		return (1);
 	return (0);
 }

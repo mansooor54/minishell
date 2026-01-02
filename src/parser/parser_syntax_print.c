@@ -10,16 +10,12 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 /* First function: Handle simple token type errors */
 static void	print_token_type_error(t_token *token)
 {
 	if (token->type == TOKEN_PIPE)
 		ft_putendl_fd(ERR_PIPE, 2);
-	else if (token->type == TOKEN_AND)
-		ft_putendl_fd(ERR_AND, 2);
-	else if (token->type == TOKEN_OR)
-		ft_putendl_fd(ERR_OR, 2);
 	else if (token->type == TOKEN_REDIR_IN)
 		ft_putendl_fd(ERR_REDIR_IN, 2);
 	else if (token->type == TOKEN_REDIR_OUT)

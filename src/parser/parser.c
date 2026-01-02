@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 static t_redir	*parse_single_redirection(t_token **tokens)
 {
@@ -113,7 +113,10 @@ t_cmd	*parse_command(t_token **tokens)
 	consume_redirs(tokens, cmd);
 	while (*tokens && (*tokens)->type == TOKEN_WORD)
 	{
-		cmd->args[i++] = ft_strdup((*tokens)->value);
+		cmd->args[i] = ft_strdup((*tokens)->value);
+		if (!cmd->args[i])
+			break ;
+		i++;
 		*tokens = (*tokens)->next;
 		consume_redirs(tokens, cmd);
 	}

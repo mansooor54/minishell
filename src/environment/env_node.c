@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 /*
 ** Create a new environment variable node
@@ -24,6 +24,11 @@ t_env	*create_env_node(char *key, char *value)
 	if (!node)
 		return (NULL);
 	node->key = ft_strdup(key);
+	if (!node->key)
+	{
+		free(node);
+		return (NULL);
+	}
 	if (value)
 		node->value = ft_strdup(value);
 	else

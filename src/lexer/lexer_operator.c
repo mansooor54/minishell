@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 /*
 ** Identify and create operator token
 ** Handles |, ||, &&, <, <<, >, >>

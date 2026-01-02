@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 /* reset signals to default in child so Ctrl-C behaves like bash */
 static void	setup_child_signals(void)

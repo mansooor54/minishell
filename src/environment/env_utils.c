@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 /*
 ** Parse environment string (KEY=VALUE)
@@ -70,8 +70,12 @@ char	**env_to_array(t_env *env)
 		if (env->value)
 		{
 			tmp = ft_strjoin(env->key, "=");
+			if (!tmp)
+				break ;
 			envp[i] = ft_strjoin(tmp, env->value);
 			free(tmp);
+			if (!envp[i])
+				break ;
 			i++;
 		}
 		env = env->next;

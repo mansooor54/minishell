@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 /*
 ** find_executable - Locate executable file in PATH or validate path
 ** This function searches for an executable command in the system PATH or

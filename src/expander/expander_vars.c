@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 char	*get_env_value(t_env *env, char *key)
 {
@@ -57,6 +57,8 @@ void	expand_var_name(t_exp_ctx *ctx)
 		return ;
 	}
 	key = ft_substr(ctx->str, start, ctx->i - start);
+	if (!key)
+		return ;
 	val = get_env_value(ctx->env, key);
 	if (val)
 		while (*val)

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 /*
 ** execute_pipeline_loop - Main loop for pipeline execution
 **

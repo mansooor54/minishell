@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 static size_t	get_safe_len(const char *s)
 {
@@ -58,6 +58,8 @@ char	*join_continuation(char *line, char *next)
 		return (NULL);
 	if (!line)
 		return (ft_strdup(next));
+	if (!next)
+		return (line);
 	while (*next == ' ' || *next == '\t' || *next == '\n')
 		next++;
 	r = str_join(line, next);

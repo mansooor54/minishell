@@ -28,13 +28,11 @@
 # include <errno.h>
 # include <readline/readline.h>
 # include <readline/history.h>
-# include "libft/libft.h"
+# include "../libft/libft.h"
 
 /* ===================== ERROR MESSAGES ===================== */
 # define ERR_NEWLINE "minishell: syntax error near unexpected token `newline'"
 # define ERR_PIPE "minishell: syntax error near unexpected token `|'"
-# define ERR_AND "minishell: syntax error near unexpected token `&&'"
-# define ERR_OR "minishell: syntax error near unexpected token `||'"
 # define ERR_REDIR_IN "minishell: syntax error near unexpected token `<'"
 # define ERR_REDIR_OUT "minishell: syntax error near unexpected token `>'"
 # define ERR_REDIR_APPEND "minishell: syntax error near unexpected token `>>'"
@@ -53,8 +51,6 @@ typedef enum e_token_type
 {
 	TOKEN_WORD,
 	TOKEN_PIPE,
-	TOKEN_AND,
-	TOKEN_OR,
 	TOKEN_REDIR_IN,
 	TOKEN_REDIR_OUT,
 	TOKEN_REDIR_APPEND,
@@ -295,7 +291,6 @@ void		history_add_line(const char *line, t_shell *shell);
 int			history_init(t_shell *shell);
 void		history_save(t_shell *shell);
 void		free_history(t_hist *hist);
-int			builtin_history(char **args, t_shell *shell);
 char		*history_path_from_env(t_env *env);
 void		add_hist_node(t_shell *shell, char *line);
 

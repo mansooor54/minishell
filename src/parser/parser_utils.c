@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 t_redir	*create_redir(t_token_type type, char *file)
 {
@@ -21,6 +21,11 @@ t_redir	*create_redir(t_token_type type, char *file)
 		return (NULL);
 	redir->type = type;
 	redir->file = ft_strdup(file);
+	if (!redir->file)
+	{
+		free(redir);
+		return (NULL);
+	}
 	redir->next = NULL;
 	return (redir);
 }

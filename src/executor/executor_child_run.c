@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 static void	execute_external_child(t_cmd *cmd, t_shell *shell, char *path)
 {

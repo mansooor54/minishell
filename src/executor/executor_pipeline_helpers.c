@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 int	update_prev_fd(int prev_read_fd, int pipefd[2], int has_next)
 {

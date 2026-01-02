@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 /* allocate pid array for pipeline */
 int	init_pipeline(int cmd_count, pid_t **pids)
 {

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 static void	check_signal(t_shell *shell)
 {
@@ -47,7 +47,7 @@ void	shell_loop(t_shell *shell)
 		check_signal(shell);
 		if (handle_eof(shell, line))
 			break ;
-		if (*line && !is_all_space(line))
+		if (line && *line && !is_all_space(line))
 		{
 			if (shell->interactive)
 				history_add_line(line, shell);

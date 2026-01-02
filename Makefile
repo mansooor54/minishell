@@ -15,7 +15,7 @@ NAME = minishell
 # Compiler and flags
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -g
-INCLUDES = -I. -I./libft
+INCLUDES = -I. -I./include -I./libft
 
 # Try to detect readline via pkg-config (Linux) or Homebrew (macOS).
 READLINE_CFLAGS := $(shell pkg-config --cflags readline 2>/dev/null)
@@ -39,7 +39,7 @@ LDFLAGS = $(READLINE_LDFLAGS) -L./libft -lft
 LIBFT_DIR = libft
 LIBFT = $(LIBFT_DIR)/libft.a
 
-HEADER = minishell.h
+HEADER = include/minishell.h
 
 BUILTINS = builtin_cd_utils builtin_cd builtin_echo \
             builtin_env builtin_exit builtin_export \
@@ -66,7 +66,7 @@ EXECUTOR = executor_child_fds executor_child_run \
 EXPANDER = expander_core expander_pipeline expander_quotes \
             expander_utils expander_vars expander_utils_helpers
 
-HISTORY = builtin_history history history_utils history_load
+HISTORY = history history_utils history_load
 
 LEXER = lexer_operator_type lexer_operator lexer_unclose \
          lexer_utils lexer
@@ -130,7 +130,7 @@ test: all
 	./minishell
 
 norm:
-	norminette $(SRCS) includes/$(HEADER)  # FIXED: Using SRCS instead of SRC
+	norminette $(SRCS) $(HEADER)
 
 leak: all
 	valgrind --leak-check=full \

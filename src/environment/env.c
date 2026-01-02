@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 /*
 ** increment_shlvl - Increment the SHLVL environment variable
@@ -38,6 +38,8 @@ void	increment_shlvl(t_env **env)
 			shlvl_value++;
 			free(current->value);
 			current->value = ft_itoa(shlvl_value);
+			if (!current->value)
+				current->value = ft_strdup("1");
 			return ;
 		}
 		current = current->next;

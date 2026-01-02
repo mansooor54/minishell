@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 static int	write_heredoc_line(int fd, char *ln, int qt, t_shell *sh)
 {

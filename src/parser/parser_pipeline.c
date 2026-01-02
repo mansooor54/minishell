@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 /*
 ** Create a new pipeline node
 ** Initializes pipeline with commands and logical operator
@@ -39,8 +39,7 @@ t_cmd	*parse_pipe_sequence(t_token **tokens)
 	t_cmd	*current;
 
 	cmds = NULL;
-	while (*tokens && (*tokens)->type != TOKEN_AND
-		&& (*tokens)->type != TOKEN_OR)
+	while (*tokens)
 	{
 		new_cmd = parse_command(tokens);
 		if (!cmds)
@@ -81,13 +80,8 @@ static void	append_pipeline(t_pipeline **head, t_pipeline *new_node)
 /* helpers */
 void	set_logic_and_advance(t_pipeline *pl, t_token **tokens)
 {
-	if (!tokens || !*tokens)
-		return ;
-	if ((*tokens)->type == TOKEN_AND || (*tokens)->type == TOKEN_OR)
-	{
-		pl->logic_op = (*tokens)->type;
-		*tokens = (*tokens)->next;
-	}
+	(void)pl;
+	(void)tokens;
 }
 
 t_pipeline	*parser(t_token *tokens)

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 int	is_valid_word(t_token *token)
 {
@@ -19,9 +19,7 @@ int	is_valid_word(t_token *token)
 
 int	is_control_operator(t_token *token)
 {
-	return (token && (token->type == TOKEN_PIPE
-			|| token->type == TOKEN_AND
-			|| token->type == TOKEN_OR));
+	return (token && token->type == TOKEN_PIPE);
 }
 
 int	is_redirection(t_token *token)

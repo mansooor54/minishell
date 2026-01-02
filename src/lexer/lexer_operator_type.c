@@ -10,28 +10,19 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 t_token	*try_or_pipe(char **input)
 {
 	if (**input != '|')
 		return (NULL);
-	if (*(*input + 1) == '|')
-	{
-		*input += 2;
-		return (create_token(TOKEN_OR, "||"));
-	}
 	(*input)++;
 	return (create_token(TOKEN_PIPE, "|"));
 }
 
 t_token	*try_and(char **input)
 {
-	if (**input == '&' && *(*input + 1) == '&')
-	{
-		*input += 2;
-		return (create_token(TOKEN_AND, "&&"));
-	}
+	(void)input;
 	return (NULL);
 }
 

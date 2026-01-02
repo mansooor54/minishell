@@ -10,15 +10,19 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../minishell.h"
+#include "../../include/minishell.h"
 
 static void	execute_child_process(t_cmd *cmd, t_shell *shell, char *path)
 {
+	char	**envp;
+
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
 	if (setup_redirections(cmd->redirs, shell) == -1)
 		exit(1);
-	execve(path, cmd->args, env_to_array(shell->env));
+	envp = env_to_array(shell->env);
+	execve(path, cmd->args, envp);
+	free_array(envp);
 	if (errno == EACCES)
 		exit(126);
 	else
