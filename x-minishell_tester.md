@@ -187,54 +187,54 @@ bash error = ( Permission denied)
 ———————————— syntax
 Test   1: ❌ | 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   2: ❌ | echo oi 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   3: ❌ | | 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   4: ❌ | $ 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   5: ❌ | > 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   6: ❌ > 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   7: ❌ >> 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   8: ❌ >>> 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test   9: ❌ < 
 mini exit code = 258
 bash exit code = 2
 Test  10: ❌ << 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test  11: ❌ echo hi < 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test  12: ❌ cat    <| ls 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test  13: ❌ echo hi | > 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test  14: ❌ echo hi | > >> 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 mini error = ( syntax error near unexpected token `>')
 bash error = ( syntax error near unexpected token `>>')
 Test  15: ❌ echo hi | < | 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test  16: ❌ echo hi |   | 
 mini exit code = 258
-bash exit code = 2
+bash exit code = 258
 Test  17: ✅ echo hi |  "|" 
 1/17
 😭 😭 😭
