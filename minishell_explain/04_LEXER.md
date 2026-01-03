@@ -11,22 +11,79 @@
 
 ## What is a Lexer?
 
-The lexer (also called tokenizer or scanner) is the first stage of command processing. It converts a raw input string into a sequence of **tokens** - meaningful units that the parser can understand.
+**Real-life analogy**: The lexer is like a **language translator's first step**:
 
+Imagine you receive a message in a foreign language:
 ```
-Input:  "ls -la | grep foo"
+"Bonjour comment allez vous"
+```
 
-Output: [WORD:"ls"] → [WORD:"-la"] → [PIPE:"|"] → [WORD:"grep"] → [WORD:"foo"]
+Before understanding the meaning, you first identify individual words:
+```
+["Bonjour"] ["comment"] ["allez"] ["vous"]
+```
+
+That's what the lexer does with shell commands!
+
+---
+
+## Lexer in Action
+
+### Example 1: Simple Command
+```
+Input:   "ls -la"
+         ↓ ↓↓↓↓
+         │ │└┴┴── word "-la"
+         │ └────── space (delimiter)
+         └──────── word "ls"
+
+Output:  [WORD:"ls"] → [WORD:"-la"] → NULL
+```
+
+### Example 2: Command with Pipe
+```
+Input:   "cat file.txt | grep error"
+
+Step by step:
+┌──────────────────────────────────────────────────────┐
+│ Position 0-2: "cat"        → [WORD:"cat"]           │
+│ Position 3:   " "          → skip (whitespace)      │
+│ Position 4-11: "file.txt"  → [WORD:"file.txt"]      │
+│ Position 12:  " "          → skip                   │
+│ Position 13:  "|"          → [PIPE:"|"]             │
+│ Position 14:  " "          → skip                   │
+│ Position 15-18: "grep"     → [WORD:"grep"]          │
+│ Position 19:  " "          → skip                   │
+│ Position 20-24: "error"    → [WORD:"error"]         │
+└──────────────────────────────────────────────────────┘
+
+Output:  [WORD:"cat"] → [WORD:"file.txt"] → [PIPE:"|"] →
+         [WORD:"grep"] → [WORD:"error"] → NULL
+```
+
+### Example 3: Redirections
+```
+Input:   "echo hello > output.txt"
+
+Output:  [WORD:"echo"] → [WORD:"hello"] → [REDIR_OUT:">"] →
+         [WORD:"output.txt"] → NULL
+```
+
+### Example 4: Heredoc
+```
+Input:   "cat << EOF"
+
+Output:  [WORD:"cat"] → [REDIR_HEREDOC:"<<"] → [WORD:"EOF"] → NULL
 ```
 
 ---
 
-## Token Types
+## Token Types - Complete List
 
 ```c
 typedef enum e_token_type
 {
-    TOKEN_WORD,          // Regular word/argument
+    TOKEN_WORD,          // Any regular word/argument
     TOKEN_PIPE,          // |
     TOKEN_REDIR_IN,      // <
     TOKEN_REDIR_OUT,     // >
@@ -36,40 +93,107 @@ typedef enum e_token_type
 }   t_token_type;
 ```
 
+### Visual Guide
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                        TOKEN TYPES                              │
+├────────────────┬───────────┬───────────────────────────────────┤
+│ TOKEN_WORD     │ "ls"      │ Commands, arguments, filenames    │
+│                │ "-la"     │                                   │
+│                │ "hello"   │                                   │
+├────────────────┼───────────┼───────────────────────────────────┤
+│ TOKEN_PIPE     │   |       │ Connects command output to input  │
+├────────────────┼───────────┼───────────────────────────────────┤
+│ TOKEN_REDIR_IN │   <       │ Read input from file              │
+├────────────────┼───────────┼───────────────────────────────────┤
+│ TOKEN_REDIR_OUT│   >       │ Write output to file (overwrite)  │
+├────────────────┼───────────┼───────────────────────────────────┤
+│TOKEN_REDIR_    │   >>      │ Write output to file (append)     │
+│ APPEND         │           │                                   │
+├────────────────┼───────────┼───────────────────────────────────┤
+│TOKEN_REDIR_    │   <<      │ Here-document (inline input)      │
+│ HEREDOC        │           │                                   │
+├────────────────┼───────────┼───────────────────────────────────┤
+│ TOKEN_EOF      │   NULL    │ End of token list                 │
+└────────────────┴───────────┴───────────────────────────────────┘
+```
+
 ---
 
-## lexer.c
+## The Token Structure
 
-### lexer()
+```c
+typedef struct s_token
+{
+    t_token_type    type;   // What kind of token
+    char            *value; // The actual text
+    struct s_token  *next;  // Pointer to next token
+}   t_token;
+```
+
+**Visual representation**:
+```
+For input: "ls | grep test"
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ type: WORD      │    │ type: PIPE      │    │ type: WORD      │    │ type: WORD      │
+│ value: "ls"     │───►│ value: "|"      │───►│ value: "grep"   │───►│ value: "test"   │───► NULL
+│ next: ──────────┼─┐  │ next: ──────────┼─┐  │ next: ──────────┼─┐  │ next: NULL      │
+└─────────────────┘ │  └─────────────────┘ │  └─────────────────┘ │  └─────────────────┘
+                    └──────────────────────┴──────────────────────┘
+```
+
+---
+
+## lexer.c - Main Functions
+
+### lexer() - The Entry Point
+
 ```c
 t_token *lexer(char *input)
 {
-    t_token *tokens;
-    t_token *new_token;
+    t_token *tokens;     // Our result - linked list of tokens
+    t_token *new_token;  // Each new token we create
 
-    tokens = NULL;
-    while (*input)
+    tokens = NULL;       // Start with empty list
+    while (*input)       // While there are more characters
     {
-        new_token = next_token(&input);
+        new_token = next_token(&input);  // Get next token
         if (!new_token)
             break;
-        add_token(&tokens, new_token);
+        add_token(&tokens, new_token);   // Add to list
     }
     return (tokens);
 }
 ```
 
-**Purpose**: Main entry point - converts input string to token list.
+**Step-by-step for "ls -la"**:
+```
+Iteration 1:
+  input = "ls -la"
+  next_token() returns [WORD:"ls"]
+  input now = " -la"
+  tokens = [WORD:"ls"]
 
-**How it works**:
-1. Start with empty token list
-2. Repeatedly call `next_token()` to get next token
-3. Add each token to the linked list
-4. Stop when input is exhausted
+Iteration 2:
+  input = " -la"  (skip space in next_token)
+  next_token() returns [WORD:"-la"]
+  input now = ""
+  tokens = [WORD:"ls"] → [WORD:"-la"]
+
+Iteration 3:
+  input = ""
+  *input is '\0' (end)
+  Loop ends
+
+Return: [WORD:"ls"] → [WORD:"-la"] → NULL
+```
 
 ---
 
-### next_token()
+### next_token() - Getting One Token
+
 ```c
 static t_token *next_token(char **input)
 {
@@ -77,14 +201,20 @@ static t_token *next_token(char **input)
     char    *word;
     int     len;
 
-    while (is_whitespace(**input))  // Skip spaces/tabs
+    // Step 1: Skip whitespace
+    while (is_whitespace(**input))
         (*input)++;
-    if (!**input)                   // End of input
+
+    // Step 2: Check if we're done
+    if (!**input)
         return (NULL);
-    if (is_operator(**input))       // Check for operator
+
+    // Step 3: Is it an operator?
+    if (is_operator(**input))
         new_token = get_operator_token(input);
-    else                            // Regular word
+    else
     {
+        // Step 4: It's a regular word
         len = extract_word(*input, &word);
         new_token = create_token(TOKEN_WORD, word);
         free(word);
@@ -94,109 +224,57 @@ static t_token *next_token(char **input)
 }
 ```
 
-**Purpose**: Extract one token from the current position.
+**Example walkthrough for "|"**:
+```
+Input:  " | grep"
+        ^
+        *input points here
 
-**Logic**:
-1. Skip whitespace
-2. If at operator char (`|`, `<`, `>`), get operator token
-3. Otherwise, extract a word token
-4. Advance input pointer past the consumed characters
+Step 1: Skip space
+        " | grep"
+          ^
+        *input points here now
 
----
+Step 2: **input == '|', not '\0', continue
 
-### create_token()
-```c
-t_token *create_token(t_token_type type, char *value)
-{
-    t_token *token;
+Step 3: is_operator('|') == TRUE
+        Call get_operator_token()
+        Returns [PIPE:"|"]
+        *input now points past the |
 
-    token = malloc(sizeof(t_token));
-    if (!token)
-        return (NULL);
-    token->type = type;
-    if (value)
-        token->value = ft_strdup(value);
-    else
-        token->value = NULL;
-    token->next = NULL;
-    return (token);
-}
+Return: [PIPE:"|"]
 ```
 
-**Purpose**: Allocate and initialize a new token.
-
 ---
 
-### add_token()
-```c
-void add_token(t_token **tokens, t_token *new_token)
-{
-    t_token *current;
+## Operator Recognition
 
-    if (!*tokens)
-    {
-        *tokens = new_token;
-        return;
-    }
-    current = *tokens;
-    while (current->next)
-        current = current->next;
-    current->next = new_token;
-}
-```
+### try_or_pipe() - Recognizing |
 
-**Purpose**: Append token to end of linked list.
-
----
-
-### free_tokens()
-```c
-void free_tokens(t_token *tokens)
-{
-    t_token *tmp;
-
-    while (tokens)
-    {
-        tmp = tokens;
-        tokens = tokens->next;
-        free(tmp->value);
-        free(tmp);
-    }
-}
-```
-
-**Purpose**: Free entire token list and all values.
-
----
-
-## lexer_operator_type.c
-
-### try_or_pipe()
 ```c
 t_token *try_or_pipe(char **input)
 {
     if (**input != '|')
         return (NULL);
-    (*input)++;
+    (*input)++;  // Move past the |
     return (create_token(TOKEN_PIPE, "|"));
 }
 ```
 
-**Purpose**: Recognize pipe operator `|`.
+**Simple!** If we see `|`, create a PIPE token.
 
-**Note**: The `||` (logical OR) was removed per 42 mandatory requirements.
+### try_inredir() - Recognizing < and <<
 
----
-
-### try_inredir()
 ```c
 t_token *try_inredir(char **input)
 {
+    // Check for << FIRST (heredoc)
     if (**input == '<' && *(*input + 1) == '<')
     {
-        *input += 2;
+        *input += 2;  // Skip both characters
         return (create_token(TOKEN_REDIR_HEREDOC, "<<"));
     }
+    // Then check for single <
     if (**input == '<')
     {
         (*input)++;
@@ -206,21 +284,35 @@ t_token *try_inredir(char **input)
 }
 ```
 
-**Purpose**: Recognize `<` (input redirection) or `<<` (heredoc).
+**Why check << before <?**
+```
+If we checked < first for input "<<EOF":
 
-**Order matters**: Check for `<<` before `<` to avoid matching `<` twice.
+Wrong way:
+  "<<EOF"
+   ^
+   See '<', return [REDIR_IN:"<"]
+   Now input is "<EOF" - WRONG!
 
----
+Right way:
+  "<<EOF"
+   ^^
+   See '<<', return [REDIR_HEREDOC:"<<"]
+   Now input is "EOF" - CORRECT!
+```
 
-### try_outredir()
+### try_outredir() - Recognizing > and >>
+
 ```c
 t_token *try_outredir(char **input)
 {
+    // Check for >> FIRST (append)
     if (**input == '>' && *(*input + 1) == '>')
     {
         *input += 2;
         return (create_token(TOKEN_REDIR_APPEND, ">>"));
     }
+    // Then check for single >
     if (**input == '>')
     {
         (*input)++;
@@ -230,99 +322,43 @@ t_token *try_outredir(char **input)
 }
 ```
 
-**Purpose**: Recognize `>` (output) or `>>` (append).
+Same logic as `<` / `<<`.
 
 ---
 
-### try_and()
-```c
-t_token *try_and(char **input)
-{
-    (void)input;
-    return (NULL);
-}
+## Quote Handling - The Tricky Part
+
+### The Challenge
+
+Quotes change how we interpret characters:
+
+```
+"hello world"    ← This is ONE word, not two!
+echo ">"         ← The > is NOT a redirection, it's text!
+echo '$HOME'     ← The $HOME is literal, not expanded!
 ```
 
-**Purpose**: Placeholder for `&&` (removed from mandatory).
+### measure_word() - Counting Characters
 
----
-
-## lexer_utils.c
-
-### is_whitespace()
-```c
-int is_whitespace(char c)
-{
-    return (c == ' ' || c == '\t');
-}
-```
-
-**Purpose**: Check if character is a delimiter.
-
----
-
-### is_operator()
-```c
-int is_operator(char c)
-{
-    if (!c)
-        return (0);
-    if (c == '|')
-        return (1);
-    if (c == '>')
-        return (1);
-    if (c == '<')
-        return (1);
-    if (c == '&')
-        return (1);
-    return (0);
-}
-```
-
-**Purpose**: Check if character starts an operator.
-
----
-
-### extract_word()
-```c
-int extract_word(char *input, char **word)
-{
-    int len;
-
-    len = measure_word(input);
-    *word = malloc((size_t)len + 1);
-    if (!*word)
-        return (0);
-    ft_strncpy(*word, input, len);
-    (*word)[len] = '\0';
-    return (len);
-}
-```
-
-**Purpose**: Extract a word (non-operator, non-whitespace sequence).
-
----
-
-### measure_word()
 ```c
 static int measure_word(char *s)
 {
-    int i;
-    int in_quote;
+    int i = 0;
+    int in_quote = 0;
 
-    i = 0;
-    in_quote = 0;
     while (is_word_cont(s, i, in_quote))
     {
+        // Entering a quote
         if (!in_quote && (s[i] == '\'' || s[i] == '"'))
         {
-            in_quote = s[i];
+            in_quote = s[i];  // Remember which quote
             i++;
             continue;
         }
+        // Exiting a quote
         if (in_quote && s[i] == in_quote)
         {
-            in_quote = 0;
+            in_quote = 0;     // No longer in quote
             i++;
             continue;
         }
@@ -332,109 +368,223 @@ static int measure_word(char *s)
 }
 ```
 
-**Purpose**: Measure length of a word, respecting quotes.
-
-**Quote handling**:
-- When `"` or `'` is encountered outside quotes, enter quote mode
-- In quote mode, spaces and operators are NOT word terminators
-- When matching quote found, exit quote mode
-
-**Example**:
+**Example: "hello world"**
 ```
-"hello world"   → one word of length 13 (quotes included)
-hello world     → "hello" is one word of length 5
-```
+Position 0: '"'  → Enter quote mode (in_quote = '"')
+Position 1: 'h'  → In quote, keep going
+Position 2: 'e'  → In quote, keep going
+Position 3: 'l'  → In quote, keep going
+Position 4: 'l'  → In quote, keep going
+Position 5: 'o'  → In quote, keep going
+Position 6: ' '  → In quote, space is NOT a delimiter!
+Position 7: 'w'  → In quote, keep going
+Position 8: 'o'  → In quote, keep going
+Position 9: 'r'  → In quote, keep going
+Position 10:'l'  → In quote, keep going
+Position 11:'d'  → In quote, keep going
+Position 12:'"'  → Exit quote mode (in_quote = 0)
+Position 13:'\0' → End of string
 
----
-
-## Lexer Examples
-
-### Simple Command
-```
-Input:  "ls -la"
-Tokens: [WORD:"ls"] → [WORD:"-la"]
+Return: 13 (the whole thing is ONE token!)
 ```
 
-### Command with Pipe
+**Example: hello world (no quotes)**
 ```
-Input:  "cat file.txt | grep error"
-Tokens: [WORD:"cat"] → [WORD:"file.txt"] → [PIPE:"|"] →
-        [WORD:"grep"] → [WORD:"error"]
-```
+Position 0: 'h'  → Not in quote, keep going
+Position 1: 'e'  → Not in quote, keep going
+Position 2: 'l'  → Not in quote, keep going
+Position 3: 'l'  → Not in quote, keep going
+Position 4: 'o'  → Not in quote, keep going
+Position 5: ' '  → Not in quote, space IS a delimiter!
+           STOP HERE!
 
-### Redirections
-```
-Input:  "echo hello > output.txt"
-Tokens: [WORD:"echo"] → [WORD:"hello"] → [REDIR_OUT:">"] → [WORD:"output.txt"]
-```
-
-### Quoted Strings
-```
-Input:  echo "hello world"
-Tokens: [WORD:"echo"] → [WORD:"\"hello world\""]
-
-Note: Quotes are preserved in the token value.
-      The expander/quote_removal step removes them later.
-```
-
-### Complex Example
-```
-Input:  cat << EOF | grep "pattern" >> out.txt
-
-Tokens: [WORD:"cat"] → [REDIR_HEREDOC:"<<"] → [WORD:"EOF"] →
-        [PIPE:"|"] → [WORD:"grep"] → [WORD:"\"pattern\""] →
-        [REDIR_APPEND:">>"] → [WORD:"out.txt"]
+Return: 5 (only "hello" is this token)
 ```
 
 ---
 
-## Token Flow Diagram
+## Complete Lexer Examples
+
+### Example 1: Complex Command
 
 ```
-     Input String
-          │
-          ▼
-    ┌─────────────┐
-    │   lexer()   │
-    └──────┬──────┘
-           │
-           ▼
-    ┌─────────────────────────────────────────┐
-    │              next_token()                │
-    │                                          │
-    │   ┌───────────────┐                     │
-    │   │ Skip spaces   │                     │
-    │   └───────┬───────┘                     │
-    │           │                              │
-    │           ▼                              │
-    │   ┌───────────────┐                     │
-    │   │ Operator?     │──yes──► get_operator_token()
-    │   └───────┬───────┘                     │
-    │           │ no                           │
-    │           ▼                              │
-    │   ┌───────────────┐                     │
-    │   │ extract_word()│──► measure_word()   │
-    │   └───────────────┘                     │
-    └─────────────────────────────────────────┘
-           │
-           ▼
-    Token Linked List
-    [type, value, next] → [type, value, next] → NULL
+Input: cat < input.txt | grep "error" >> log.txt
+
+Lexer output:
+┌─────────────────┐
+│ WORD: "cat"     │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ REDIR_IN: "<"   │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ WORD: "input.txt"│
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ PIPE: "|"       │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ WORD: "grep"    │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ WORD: "\"error\"" │  ← Quotes are KEPT in value!
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ REDIR_APPEND: ">>"|
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ WORD: "log.txt" │
+└────────┬────────┘
+         ▼
+        NULL
+```
+
+### Example 2: Heredoc
+
+```
+Input: cat << EOF
+
+Lexer output:
+[WORD:"cat"] → [REDIR_HEREDOC:"<<"] → [WORD:"EOF"] → NULL
+```
+
+### Example 3: Mixed Quotes
+
+```
+Input: echo "hello" 'world' mix"ed"quotes
+
+Lexer output:
+[WORD:"echo"] → [WORD:"\"hello\""] → [WORD:"'world'"] →
+[WORD:"mix\"ed\"quotes"] → NULL
+
+Note: Quotes stay attached to words! The expander handles them later.
+```
+
+---
+
+## Lexer Flow Diagram
+
+```
+                Input String: "ls -la | grep foo"
+                              │
+                              ▼
+         ┌─────────────────────────────────────────────┐
+         │                  lexer()                     │
+         │                                              │
+         │   tokens = NULL                              │
+         │                                              │
+         │   Loop while *input:                         │
+         │   ┌───────────────────────────────────────┐ │
+         │   │           next_token()                 │ │
+         │   │                                        │ │
+         │   │   ┌─────────────────────────┐         │ │
+         │   │   │ Skip whitespace         │         │ │
+         │   │   │ "ls -la | grep foo"     │         │ │
+         │   │   │  ^^                     │         │ │
+         │   │   └───────────┬─────────────┘         │ │
+         │   │               ▼                        │ │
+         │   │   ┌─────────────────────────┐         │ │
+         │   │   │ Is operator? 'l' → NO   │         │ │
+         │   │   └───────────┬─────────────┘         │ │
+         │   │               ▼                        │ │
+         │   │   ┌─────────────────────────┐         │ │
+         │   │   │ extract_word("ls")      │         │ │
+         │   │   │ measure = 2             │         │ │
+         │   │   │ create [WORD:"ls"]      │         │ │
+         │   │   └─────────────────────────┘         │ │
+         │   └───────────────────────────────────────┘ │
+         │                                              │
+         │   add_token(&tokens, new_token)              │
+         │   Repeat for next character...               │
+         │                                              │
+         └──────────────────────────────────────────────┘
+                              │
+                              ▼
+         [WORD:"ls"] → [WORD:"-la"] → [PIPE:"|"] →
+         [WORD:"grep"] → [WORD:"foo"] → NULL
 ```
 
 ---
 
 ## Key Concepts
 
-### Why Quotes Stay in Token Values?
-The lexer's job is just to split input into tokens. It doesn't interpret the tokens. Quote handling (removing quotes, deciding what gets expanded) is done by the **expander** later.
+### 1. Why Keep Quotes in Token Values?
 
-### Order of Operator Checking
-When checking for `<<` vs `<`:
-1. Must check `<<` FIRST
-2. Otherwise `<<` would match as two `<` tokens
+The lexer's job is ONLY to split input into tokens. It doesn't interpret meaning.
 
-### Whitespace as Delimiter
-Spaces/tabs separate tokens but are not tokens themselves:
-- `ls-la` → one token `[WORD:"ls-la"]`
-- `ls -la` → two tokens `[WORD:"ls"]` `[WORD:"-la"]`
+```
+Input: echo "$HOME"
+
+Lexer sees:  echo  "$HOME"
+                   ^^^^^^^^
+                   All one word
+
+Token value: "\"$HOME\""  (quotes included)
+
+Later, expander will:
+1. See the quotes
+2. Expand $HOME because it's in double quotes
+3. Remove the quotes
+
+This separation keeps code simple and maintainable!
+```
+
+### 2. Whitespace as Delimiter
+
+```
+"ls-la"     →  [WORD:"ls-la"]      (1 token, no space)
+"ls -la"    →  [WORD:"ls"] [WORD:"-la"]  (2 tokens, space splits)
+"ls  -la"   →  [WORD:"ls"] [WORD:"-la"]  (still 2 tokens, extra spaces ignored)
+```
+
+### 3. Operators Break Words
+
+```
+"echo>file"  →  [WORD:"echo"] [REDIR_OUT:">"] [WORD:"file"]
+                No space needed! > is an operator.
+
+"echo>>file" →  [WORD:"echo"] [REDIR_APPEND:">>"] [WORD:"file"]
+```
+
+---
+
+## Common Questions
+
+### Q: What if quotes are unbalanced?
+
+**A**: The lexer still works! It reads until end of string:
+```
+Input: echo "hello
+
+Lexer produces: [WORD:"echo"] [WORD:"\"hello"]
+
+The shell_loop detects unclosed quotes and asks for more input ("> " prompt).
+```
+
+### Q: What happens with empty input?
+
+**A**:
+```
+Input: ""
+Lexer returns: NULL (empty token list)
+```
+
+### Q: How are escape characters handled?
+
+**A**: The lexer doesn't handle escapes specially. It just reads characters.
+Inside quotes, everything (including \) is read literally.
+
+```
+Input: echo "hello\nworld"
+Lexer: [WORD:"echo"] [WORD:"\"hello\\nworld\""]
+
+The \n is two characters: \ and n
+Whether it becomes a newline depends on the command!
+```

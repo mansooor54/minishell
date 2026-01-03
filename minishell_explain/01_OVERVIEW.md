@@ -2,227 +2,544 @@
 
 ## What is Minishell?
 
-Minishell is a simplified shell implementation written in C, following 42 School's requirements. It replicates core functionality of bash, allowing users to execute commands, manage environment variables, and use pipes and redirections.
+Minishell is a simplified shell (like bash or zsh) written in C. A shell is a program that:
+1. Shows a prompt and waits for user input
+2. Reads what user types
+3. Understands and executes the command
+4. Shows the result
+5. Repeats forever until user exits
 
-## Project Architecture
+**Real-life analogy**: Think of a shell like a waiter in a restaurant:
+- Waiter asks "What would you like?" (prompt)
+- You say "Bring me coffee" (command)
+- Waiter understands and brings coffee (execution)
+- Waiter comes back and asks again (loop)
+
+---
+
+## How a Command is Processed (Step by Step)
+
+Let's follow what happens when you type: `echo "Hello $USER" | cat > file.txt`
+
+### Step 1: Reading Input
+```
+User types: echo "Hello $USER" | cat > file.txt
+            ↓
+Shell receives this as a string
+```
+
+### Step 2: Lexer (Tokenization)
+**What**: Breaks the string into meaningful pieces called "tokens"
+**Why**: Like breaking a sentence into words
+
+```
+Input:  echo "Hello $USER" | cat > file.txt
+
+Tokens created:
+┌─────────────────────┐
+│ WORD: "echo"        │
+├─────────────────────┤
+│ WORD: "Hello $USER" │  ← quotes kept for now
+├─────────────────────┤
+│ PIPE: "|"           │
+├─────────────────────┤
+│ WORD: "cat"         │
+├─────────────────────┤
+│ REDIR_OUT: ">"      │
+├─────────────────────┤
+│ WORD: "file.txt"    │
+└─────────────────────┘
+```
+
+**Real-life analogy**: Like reading "I want coffee" and identifying:
+- "I" = subject
+- "want" = verb
+- "coffee" = object
+
+### Step 3: Parser (Building Structure)
+**What**: Organizes tokens into a tree structure
+**Why**: Understands relationships (which command, which file, etc.)
+
+```
+From tokens, parser builds:
+
+t_pipeline
+└── cmds:
+    ├── t_cmd #1
+    │   ├── args: ["echo", "Hello $USER"]
+    │   └── redirs: NULL
+    │   └── next: ───────────────────────┐
+    │                                     │
+    └── t_cmd #2 ◄────────────────────────┘
+        ├── args: ["cat"]
+        └── redirs:
+            └── t_redir
+                ├── type: REDIR_OUT (>)
+                └── file: "file.txt"
+```
+
+**Real-life analogy**: Understanding that in "Give the book to John":
+- Action: Give
+- Object: book
+- Recipient: John
+
+### Step 4: Expander (Variable Substitution)
+**What**: Replaces `$VARIABLE` with actual values
+**Why**: Variables like `$USER` need to become real values
+
+```
+Before expansion:
+  args: ["echo", "Hello $USER"]
+
+After expansion (if USER=mansoor):
+  args: ["echo", "Hello mansoor"]
+
+Also removes quotes:
+  args: ["echo", "Hello mansoor"]  ← no more quotes
+```
+
+**Real-life analogy**: Like replacing "my address" with your actual address "123 Main St"
+
+### Step 5: Executor (Running Commands)
+**What**: Actually runs the commands
+**Why**: This is the actual work!
+
+```
+1. Create a pipe (connection between commands)
+
+2. Fork child #1 for "echo":
+   ┌────────────────────────────┐
+   │ Child Process #1           │
+   │ - stdout → pipe write end  │
+   │ - runs: echo "Hello mansoor"│
+   │ - writes "Hello mansoor" to pipe │
+   └────────────────────────────┘
+
+3. Fork child #2 for "cat":
+   ┌────────────────────────────┐
+   │ Child Process #2           │
+   │ - stdin ← pipe read end    │
+   │ - stdout → file.txt        │
+   │ - runs: cat                │
+   │ - reads from pipe, writes to file │
+   └────────────────────────────┘
+
+4. Wait for both children to finish
+
+5. file.txt now contains: "Hello mansoor"
+```
+
+---
+
+## Project Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           USER INPUT                                 │
-│                    (typed at minishell> prompt)                      │
+│                    "ls -la | grep .c > out.txt"                     │
 └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         1. SHELL LOOP                                │
-│                    (reads input with readline)                       │
-│                         src/core/                                    │
+│                                                                      │
+│   while (1) {                                                        │
+│       show_prompt();      // "minishell> "                          │
+│       line = readline();  // wait for user                          │
+│       process(line);      // do everything below                    │
+│   }                                                                  │
 └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           2. LEXER                                   │
-│              (converts input string into tokens)                     │
-│                         src/lexer/                                   │
 │                                                                      │
-│   "ls -la | grep foo" → [WORD:ls] [WORD:-la] [PIPE:|] [WORD:grep]   │
+│   Input:  "ls -la | grep .c"                                        │
+│                                                                      │
+│   Output: [WORD:ls] → [WORD:-la] → [PIPE:|] → [WORD:grep] → [WORD:.c]│
+│                                                                      │
+│   Think of it as: Breaking sentence into words                       │
 └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          3. PARSER                                   │
-│         (builds command structure from tokens)                       │
-│                        src/parser/                                   │
 │                                                                      │
-│   tokens → t_pipeline → t_cmd (with args and redirections)          │
+│   Input:  Token list                                                 │
+│                                                                      │
+│   Output: Command structure                                          │
+│           cmd1 (ls -la) ──pipe──► cmd2 (grep .c)                    │
+│                                                                      │
+│   Think of it as: Understanding grammar of the sentence             │
 └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         4. EXPANDER                                  │
-│     (expands $VARIABLES and removes quotes)                          │
-│                       src/expander/                                  │
 │                                                                      │
-│   "$HOME/file" → "/Users/john/file"                                 │
+│   Input:  "echo $HOME"                                              │
+│   Output: "echo /Users/mansoor"                                     │
+│                                                                      │
+│   - Replaces $VAR with values                                       │
+│   - Removes quotes                                                   │
+│   - Handles $? (exit status)                                        │
 └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         5. EXECUTOR                                  │
-│      (runs commands with pipes and redirections)                     │
-│                       src/executor/                                  │
 │                                                                      │
-│   - Handles builtins (echo, cd, pwd, export, unset, env, exit)      │
-│   - Forks for external commands                                      │
-│   - Sets up pipes between commands                                   │
-│   - Sets up file redirections                                        │
+│   For each command:                                                  │
+│   1. Is it builtin (echo/cd/pwd)? → Run directly                    │
+│   2. Is it external (ls/grep)?    → Fork + Execve                   │
+│   3. Has pipes?                   → Connect with pipe()             │
+│   4. Has redirections?            → Redirect stdin/stdout           │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Directory Structure
+---
+
+## Directory Structure Explained
 
 ```
 minishell/
-├── Makefile              # Build configuration
+├── Makefile              # How to build the project
+│
 ├── include/
-│   └── minishell.h       # Central header with all declarations
-├── libft/                # Custom libft library
+│   └── minishell.h       # All function declarations
+│                         # All struct definitions
+│                         # All includes
+│
+├── libft/                # Your libft library
+│   └── (libft files)     # ft_strlen, ft_strdup, etc.
+│
 └── src/
-    ├── main/             # Entry point and logo
-    │   ├── main.c        # Program entry, initialization
-    │   └── minishell_logo.c
     │
-    ├── core/             # Shell loop and line reading
-    │   ├── shell_loop.c       # Main REPL loop
-    │   ├── read_logical_line.c # Handle multi-line input
-    │   ├── join_continuation.c # Join continuation lines
-    │   └── shell_utils.c
+    ├── main/             # WHERE PROGRAM STARTS
+    │   ├── main.c        # main() function
+    │   └── minishell_logo.c  # Pretty logo printing
     │
-    ├── lexer/            # Tokenization
-    │   ├── lexer.c            # Main lexer logic
-    │   ├── lexer_operator.c   # Operator detection
-    │   ├── lexer_operator_type.c # Specific operators
-    │   ├── lexer_utils.c      # Helper functions
-    │   └── lexer_unclose.c    # Unclosed quote detection
+    ├── core/             # THE MAIN LOOP
+    │   ├── shell_loop.c      # while(1) { read; execute; }
+    │   ├── read_logical_line.c  # Handle multi-line input
+    │   └── ...
     │
-    ├── parser/           # Command parsing
-    │   ├── parser.c           # Build t_cmd from tokens
-    │   ├── parser_pipeline.c  # Build pipeline structure
-    │   ├── parser_syntax_check.c # Syntax validation
-    │   ├── parser_utils.c     # Parser helpers
-    │   └── parser_error.c     # Error messages
+    ├── lexer/            # BREAKING INTO TOKENS
+    │   ├── lexer.c           # Main lexer
+    │   ├── lexer_operator.c  # Handle |, <, >, <<, >>
+    │   └── lexer_utils.c     # Helper functions
     │
-    ├── expander/         # Variable expansion
-    │   ├── expander_core.c    # Main expansion logic
-    │   ├── expander_vars.c    # Variable lookup
-    │   ├── expander_quotes.c  # Quote removal
-    │   ├── expander_utils.c   # Expansion helpers
-    │   └── expander_pipeline.c
+    ├── parser/           # BUILDING COMMAND STRUCTURE
+    │   ├── parser.c          # Main parser
+    │   ├── parser_pipeline.c # Handle pipes
+    │   └── parser_syntax_check.c  # Check for errors
     │
-    ├── executor/         # Command execution
-    │   ├── executor.c         # Main entry point
-    │   ├── executor_pipeline.c # Pipeline execution
-    │   ├── executor_external.c # External commands
-    │   ├── executor_commands.c # Command dispatch
-    │   ├── executor_path.c    # PATH resolution
-    │   ├── executor_redirections.c # File redirections
-    │   └── executor_redir_heredoc.c # Heredoc handling
+    ├── expander/         # VARIABLE EXPANSION
+    │   ├── expander_core.c   # Main expansion
+    │   ├── expander_vars.c   # $VAR handling
+    │   └── expander_quotes.c # Quote removal
     │
-    ├── builtins/         # Built-in commands
-    │   ├── builtins.c         # Dispatcher
-    │   ├── builtin_echo.c     # echo command
-    │   ├── builtin_cd.c       # cd command
-    │   ├── builtin_pwd.c      # pwd command
-    │   ├── builtin_export.c   # export command
-    │   ├── builtin_unset.c    # unset command
-    │   ├── builtin_env.c      # env command
-    │   └── builtin_exit.c     # exit command
+    ├── executor/         # RUNNING COMMANDS
+    │   ├── executor.c        # Main executor
+    │   ├── executor_pipeline.c   # Pipe handling
+    │   ├── executor_external.c   # Fork + exec
+    │   └── executor_redirections.c  # < > >> <<
     │
-    ├── environment/      # Environment management
-    │   ├── env.c              # Init and SHLVL
-    │   ├── env_node.c         # Linked list operations
-    │   ├── env_utils.c        # Conversion utilities
-    │   └── env_array.c
+    ├── builtins/         # BUILT-IN COMMANDS
+    │   ├── builtin_echo.c    # echo command
+    │   ├── builtin_cd.c      # cd command
+    │   ├── builtin_pwd.c     # pwd command
+    │   ├── builtin_export.c  # export command
+    │   ├── builtin_unset.c   # unset command
+    │   ├── builtin_env.c     # env command
+    │   └── builtin_exit.c    # exit command
     │
-    ├── history/          # Command history
-    │   ├── history.c          # History management
-    │   ├── history_utils.c
-    │   └── history_load.c
+    ├── environment/      # ENVIRONMENT VARIABLES
+    │   ├── env.c             # Initialize from envp
+    │   ├── env_node.c        # Linked list operations
+    │   └── env_utils.c       # Get/set values
     │
-    ├── signals/          # Signal handlers
-    │   └── signals.c          # SIGINT/SIGQUIT handling
+    ├── signals/          # CTRL+C, CTRL+D, CTRL+\
+    │   └── signals.c         # Signal handlers
     │
-    └── utils/            # Helper functions
-        ├── utils.c            # General utilities
-        └── utils_num.c        # Number validation
+    └── utils/            # HELPER FUNCTIONS
+        └── utils.c           # free_array, etc.
 ```
 
-## Key Data Structures
+---
+
+## Key Data Structures Explained with Examples
 
 ### t_token (Lexer Output)
 ```c
 typedef struct s_token
 {
-    t_token_type    type;   // WORD, PIPE, REDIR_IN, etc.
-    char            *value; // The actual string
-    struct s_token  *next;  // Linked list
+    t_token_type    type;   // What kind? WORD, PIPE, etc.
+    char            *value; // The actual text
+    struct s_token  *next;  // Pointer to next token
 }   t_token;
+```
+
+**Visual Example**:
+```
+Input: "ls | grep foo"
+
+Creates linked list:
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ type: WORD   │    │ type: PIPE   │    │ type: WORD   │    │ type: WORD   │
+│ value: "ls"  │───►│ value: "|"   │───►│ value: "grep"│───►│ value: "foo" │───► NULL
+└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
 ```
 
 ### t_cmd (Single Command)
 ```c
 typedef struct s_cmd
 {
-    char            **args;    // Command + arguments
-    t_redir         *redirs;   // Redirections list
+    char            **args;    // ["ls", "-la", NULL]
+    t_redir         *redirs;   // List of redirections
     struct s_cmd    *next;     // Next command in pipe
-    int             expanded;  // Already expanded flag
+    int             expanded;  // Already processed?
 }   t_cmd;
 ```
 
-### t_pipeline (Pipeline of Commands)
+**Visual Example**:
+```
+Command: "ls -la > out.txt"
+
+t_cmd:
+┌─────────────────────────────────────┐
+│ args: ──────► ["ls", "-la", NULL]   │
+│               [0]   [1]    [2]      │
+│                                     │
+│ redirs: ────► t_redir               │
+│               ├── type: REDIR_OUT   │
+│               └── file: "out.txt"   │
+│                                     │
+│ next: NULL (no more commands)       │
+└─────────────────────────────────────┘
+```
+
+### t_pipeline (Connected Commands)
 ```c
 typedef struct s_pipeline
 {
-    t_cmd               *cmds;     // Commands in pipe
-    t_token_type        logic_op;  // (unused in mandatory)
-    struct s_pipeline   *next;     // Next pipeline
+    t_cmd               *cmds;     // First command
+    t_token_type        logic_op;  // (not used in mandatory)
+    struct s_pipeline   *next;     // (not used in mandatory)
 }   t_pipeline;
 ```
 
-### t_shell (Shell State)
-```c
-typedef struct s_shell
-{
-    t_env   *env;           // Environment variables
-    int     exit_status;    // Last command exit code
-    int     should_exit;    // Exit flag
-    int     interactive;    // Is TTY?
-    // ... other fields
-}   t_shell;
+**Visual Example for `ls | grep .c | wc -l`**:
+```
+t_pipeline
+└── cmds: ─────────────────────────────────────────────────┐
+                                                           │
+    ┌──────────────────────────────────────────────────────▼─┐
+    │ t_cmd                                                   │
+    │ args: ["ls", NULL]                                      │
+    │ next: ─────────────────────────────────────────────────┐│
+    └────────────────────────────────────────────────────────┘│
+                                                              │
+    ┌─────────────────────────────────────────────────────────▼┐
+    │ t_cmd                                                    │
+    │ args: ["grep", ".c", NULL]                               │
+    │ next: ─────────────────────────────────────────────────┐ │
+    └────────────────────────────────────────────────────────┘ │
+                                                               │
+    ┌──────────────────────────────────────────────────────────▼┐
+    │ t_cmd                                                     │
+    │ args: ["wc", "-l", NULL]                                  │
+    │ next: NULL                                                │
+    └───────────────────────────────────────────────────────────┘
 ```
 
-## Global Variable
+---
 
-The only global variable allowed by 42 subject:
+## The Global Variable Explained
+
 ```c
 volatile sig_atomic_t g_signal = 0;
 ```
-Used exclusively to store the signal number received (e.g., SIGINT = 2).
 
-## Execution Flow Example
+**Why only ONE global?**
+- 42 subject allows only one global variable
+- It must be used only for signals
+- Signals interrupt normal execution, so we need a way to communicate
 
-Input: `ls -la | grep ".c" > output.txt`
+**Example: What happens when you press Ctrl+C**
+```
+Step 1: You're typing at prompt
+        minishell> echo hel|     ← cursor here
 
-1. **Lexer** creates tokens:
-   - `[WORD:"ls"]` `[WORD:"-la"]` `[PIPE:"|"]` `[WORD:"grep"]` `[WORD:".c"]` `[REDIR_OUT:">"]` `[WORD:"output.txt"]`
+Step 2: You press Ctrl+C
+        ↓
+        Operating system sends SIGINT signal to our program
 
-2. **Parser** builds structure:
-   ```
-   t_pipeline
-   └── t_cmd (ls -la)
-       └── next: t_cmd (grep ".c")
-                 └── redirs: REDIR_OUT → "output.txt"
-   ```
+Step 3: Signal handler runs immediately (interrupts normal code)
+        ┌─────────────────────────────┐
+        │ handle_sigint(int sig)      │
+        │ {                           │
+        │     g_signal = sig;  // 2   │ ← stores signal number
+        │     write(1, "\n", 1);      │ ← print newline
+        │     rl_redisplay();         │ ← show new prompt
+        │ }                           │
+        └─────────────────────────────┘
 
-3. **Expander** processes:
-   - No variables to expand
-   - Removes quotes: `.c` stays as `.c`
+Step 4: Shell loop checks g_signal
+        if (g_signal == SIGINT)       ← "was Ctrl+C pressed?"
+            exit_status = 130;        ← set correct exit code
+            g_signal = 0;             ← reset for next time
 
-4. **Executor**:
-   - Creates pipe between commands
-   - Forks for `ls -la`, connects stdout to pipe
-   - Forks for `grep .c`, connects stdin from pipe, stdout to file
-   - Waits for both processes to finish
+Step 5: Fresh prompt appears
+        minishell>                    ← ready for new input
+```
 
-## Exit Codes
+---
 
-| Code  | Meaning              |
-|-------|----------------------|
-|  0    | Success              |
-|  1    | General error        |
-|  2    | Syntax error         |
-|  126  | Permission denied    |
-|  127  | Command not found    |
-| 128+N | Killed by signal N   |
-| 130   | Interrupted (Ctrl+C) |
+## Complete Example: From Input to Output
+
+**User types**: `cat < input.txt | grep hello > output.txt`
+
+### Visual Step-by-Step:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ STEP 1: LEXER                                                      │
+│                                                                    │
+│ Input string: "cat < input.txt | grep hello > output.txt"          │
+│                                                                    │
+│ Output tokens:                                                     │
+│ [WORD:cat]──►[REDIR_IN:<]──►[WORD:input.txt]──►[PIPE:|]──►         │
+│ [WORD:grep]──►[WORD:hello]──►[REDIR_OUT:>]──►[WORD:output.txt]     │
+└────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ STEP 2: PARSER                                                     │
+│                                                                    │
+│ Builds this structure:                                             │
+│                                                                    │
+│ t_pipeline                                                         │
+│ └── cmds:                                                          │
+│     ├── t_cmd #1                                                   │
+│     │   ├── args: ["cat", NULL]                                    │
+│     │   ├── redirs: [type:REDIR_IN, file:"input.txt"]             │
+│     │   └── next: ────────────────────────┐                        │
+│     │                                      ▼                       │
+│     └── t_cmd #2                                                   │
+│         ├── args: ["grep", "hello", NULL]                          │
+│         ├── redirs: [type:REDIR_OUT, file:"output.txt"]           │
+│         └── next: NULL                                             │
+└────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ STEP 3: EXPANDER                                                   │
+│                                                                    │
+│ No $variables in this example, so args stay the same.              │
+│ If we had "$USER", it would become "mansoor"                       │
+└────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ STEP 4: EXECUTOR                                                   │
+│                                                                    │
+│ (a) Create a pipe:                                                 │
+│     ┌─────────┐                                                    │
+│     │  PIPE   │  pipe[0] = read end                                │
+│     │ [0] [1] │  pipe[1] = write end                               │
+│     └─────────┘                                                    │
+│                                                                    │
+│ (b) Fork child #1 for "cat":                                       │
+│     ┌────────────────────────────────────────────┐                 │
+│     │ CHILD PROCESS #1                           │                 │
+│     │                                            │                 │
+│     │ Step 1: Open "input.txt"                   │                 │
+│     │ Step 2: dup2(file, STDIN)  ← read from file│                 │
+│     │ Step 3: dup2(pipe[1], STDOUT) ← write to pipe                │
+│     │ Step 4: execve("/bin/cat", ["cat"], env)   │                 │
+│     │                                            │                 │
+│     │ Data flow: input.txt ──► cat ──► pipe      │                 │
+│     └────────────────────────────────────────────┘                 │
+│                                                                    │
+│ (c) Fork child #2 for "grep":                                      │
+│     ┌────────────────────────────────────────────┐                 │
+│     │ CHILD PROCESS #2                           │                 │
+│     │                                            │                 │
+│     │ Step 1: dup2(pipe[0], STDIN) ← read from pipe                │
+│     │ Step 2: Open "output.txt"                  │                 │
+│     │ Step 3: dup2(file, STDOUT) ← write to file │                 │
+│     │ Step 4: execve("/bin/grep", ["grep","hello"], env)           │
+│     │                                            │                 │
+│     │ Data flow: pipe ──► grep ──► output.txt    │                 │
+│     └────────────────────────────────────────────┘                 │
+│                                                                    │
+│ (d) Parent waits for both children to finish                       │
+│                                                                    │
+│ (e) Final data flow:                                               │
+│     input.txt ──► cat ──► pipe ──► grep ──► output.txt             │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Exit Codes Explained with Examples
+
+| Code | Meaning | Example Command | Result |
+|------|---------|-----------------|--------|
+| 0 | Success | `ls` | Files listed successfully |
+| 1 | General error | `cd nonexistent` | Directory doesn't exist |
+| 2 | Syntax error | `\| ls` | Pipe at start is invalid |
+| 126 | Permission denied | `./script.sh` | File exists but not executable |
+| 127 | Command not found | `asdfgh` | No such command |
+| 130 | Interrupted (Ctrl+C) | `sleep 100` + Ctrl+C | User interrupted |
+
+**How to check exit code in minishell**:
+```bash
+minishell> ls /nonexistent
+ls: /nonexistent: No such file or directory
+minishell> echo $?
+1
+
+minishell> ls
+Makefile  src  include
+minishell> echo $?
+0
+
+minishell> |
+minishell: syntax error near unexpected token `|'
+minishell> echo $?
+2
+```
+
+---
+
+## Quick Reference Tables
+
+### Token Types
+| Type | Symbol | Example | Meaning |
+|------|--------|---------|---------|
+| TOKEN_WORD | (text) | `ls`, `-la` | Command or argument |
+| TOKEN_PIPE | `\|` | `ls \| grep` | Connect commands |
+| TOKEN_REDIR_IN | `<` | `cat < file` | Read from file |
+| TOKEN_REDIR_OUT | `>` | `echo > file` | Write to file (overwrite) |
+| TOKEN_REDIR_APPEND | `>>` | `echo >> file` | Write to file (append) |
+| TOKEN_REDIR_HEREDOC | `<<` | `cat << EOF` | Read until delimiter |
+
+### Builtin Commands
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `echo` | Print text | `echo hello world` |
+| `cd` | Change directory | `cd /home` |
+| `pwd` | Print current directory | `pwd` |
+| `export` | Set environment variable | `export VAR=value` |
+| `unset` | Remove environment variable | `unset VAR` |
+| `env` | Print all variables | `env` |
+| `exit` | Exit the shell | `exit 0` |
+
+### Quote Behavior
+| Quote | Variable Expansion | Example Input | Output |
+|-------|-------------------|---------------|--------|
+| None | Yes | `echo $USER` | `mansoor` |
+| Double `"` | Yes | `echo "$USER"` | `mansoor` |
+| Single `'` | No | `echo '$USER'` | `$USER` |

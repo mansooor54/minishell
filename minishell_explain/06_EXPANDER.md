@@ -12,26 +12,108 @@
 
 ## What is the Expander?
 
-The expander processes command arguments after parsing to:
-1. **Expand variables**: `$HOME` → `/Users/john`
-2. **Expand exit status**: `$?` → `0`
-3. **Remove quotes**: `"hello"` → `hello`
+**Real-life analogy**: The expander is like a **translator with a dictionary**:
 
+Imagine you receive a message with abbreviations:
 ```
-Before: echo "$HOME/file" '$USER'
-After:  echo  /Users/john/file  $USER
-              ↑ expanded         ↑ literal (single quotes)
+"Hello MR_SMITH, your apt is at ADDR"
+```
+
+You look up in your notebook:
+- MR_SMITH → John Smith
+- ADDR → 123 Main Street
+
+Result:
+```
+"Hello John Smith, your apt is at 123 Main Street"
+```
+
+The shell expander does the same with environment variables!
+
+---
+
+## Expander in Action
+
+### Example 1: Variable Expansion
+```
+Before: echo $HOME
+        ↓
+Dictionary lookup: HOME = /Users/mansoor
+        ↓
+After:  echo /Users/mansoor
+```
+
+### Example 2: Exit Status
+```
+Previous command returned: 0
+
+Before: echo $?
+        ↓
+Lookup: ? = last exit status = 0
+        ↓
+After:  echo 0
+```
+
+### Example 3: Quote Handling
+```
+Before: echo "$HOME" '$HOME'
+             ↓          ↓
+           expand    don't expand
+           (double)   (single)
+        ↓
+After:  echo "/Users/mansoor" '$HOME'
+        ↓
+Remove quotes:
+After:  echo /Users/mansoor $HOME
 ```
 
 ---
 
-## Expansion Context Structure
+## The Quote Rules - Most Important!
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     QUOTE BEHAVIOR TABLE                         │
+├────────────────┬────────────────┬────────────────────────────────┤
+│ Quote Type     │ Variables      │ Example                        │
+├────────────────┼────────────────┼────────────────────────────────┤
+│ No quotes      │ EXPANDED       │ echo $HOME → /Users/mansoor   │
+│                │                │                                │
+├────────────────┼────────────────┼────────────────────────────────┤
+│ Double quotes  │ EXPANDED       │ echo "$HOME" → /Users/mansoor │
+│ "..."          │                │ (but preserves as one word)   │
+│                │                │                                │
+├────────────────┼────────────────┼────────────────────────────────┤
+│ Single quotes  │ NOT EXPANDED   │ echo '$HOME' → $HOME          │
+│ '...'          │ (literal)      │ ($ is just a character)       │
+│                │                │                                │
+└────────────────┴────────────────┴────────────────────────────────┘
+```
+
+### Why the Difference?
+
+**Double quotes** = "I want spaces preserved, but expand variables"
+```bash
+FILE="my file.txt"
+cat "$FILE"          # Works! Treated as ONE argument
+cat $FILE            # Broken! Treated as TWO arguments: "my" and "file.txt"
+```
+
+**Single quotes** = "I want EXACTLY these characters, nothing special"
+```bash
+echo '$HOME'         # Prints: $HOME (literally)
+echo 'use * for wildcards'   # * is literal, not expanded
+```
+
+---
+
+## The Expansion Context
 
 ```c
 typedef struct s_exp_ctx
 {
-    char    *str;        // Original string
-    char    *result;     // Output buffer
+    char    *str;        // Original string being processed
+    char    *result;     // Output buffer (expanded string)
     int     i;           // Current position in str
     int     j;           // Current position in result
     char    in_quote;    // 0, '\'', or '"'
@@ -40,410 +122,465 @@ typedef struct s_exp_ctx
 }   t_exp_ctx;
 ```
 
+**Visual for expanding `"Hello $USER"`**:
+```
+str:    " H e l l o   $ U S E R "
+         ↑
+         i (moving through input)
+
+result: H e l l o   m a n s o o r
+                                ↑
+                                j (building output)
+
+in_quote: '"' (we're inside double quotes)
+```
+
 ---
 
-## expander_core.c
+## Step-by-Step Expansion Examples
 
-### expand_variables()
+### Example 1: Simple Variable
+
+**Input**: `$HOME`
+**Environment**: HOME=/Users/mansoor
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Step 1: See '$'                                       │
+│         in_quote = 0 (not in quotes)                 │
+│         Should we expand? YES                        │
+│                                                       │
+│ Step 2: Skip the '$'                                 │
+│         i moves from 0 to 1                          │
+│                                                       │
+│ Step 3: Read variable name                           │
+│         Read: H, O, M, E (all valid name chars)      │
+│         Stop at end of string                        │
+│         key = "HOME"                                 │
+│                                                       │
+│ Step 4: Look up in environment                       │
+│         get_env_value(env, "HOME")                   │
+│         Returns: "/Users/mansoor"                    │
+│                                                       │
+│ Step 5: Copy value to result                         │
+│         result = "/Users/mansoor"                    │
+└──────────────────────────────────────────────────────┘
+
+Result: "/Users/mansoor"
+```
+
+### Example 2: Variable in Double Quotes
+
+**Input**: `"Hello $USER"`
+**Environment**: USER=mansoor
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Position 0: '"'                                       │
+│   in_quote becomes '"'                               │
+│   Copy to result: "                                  │
+│                                                       │
+│ Position 1-6: 'H' 'e' 'l' 'l' 'o' ' '               │
+│   Normal characters, just copy                       │
+│   result: "Hello                                     │
+│                                                       │
+│ Position 7: '$'                                       │
+│   in_quote == '"' (double quote)                     │
+│   Should expand? YES (double quotes allow expansion) │
+│                                                       │
+│ Position 8-11: 'U' 'S' 'E' 'R'                       │
+│   Read variable name: USER                           │
+│   Look up: mansoor                                   │
+│   Copy value to result                               │
+│   result: "Hello mansoor                             │
+│                                                       │
+│ Position 12: '"'                                      │
+│   Matches in_quote                                   │
+│   in_quote becomes 0                                 │
+│   Copy to result: "                                  │
+│   result: "Hello mansoor"                            │
+└──────────────────────────────────────────────────────┘
+
+After expansion:  "Hello mansoor"
+After remove_quotes: Hello mansoor
+```
+
+### Example 3: Variable in Single Quotes
+
+**Input**: `'$HOME'`
+**Environment**: HOME=/Users/mansoor
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Position 0: '\''                                      │
+│   in_quote becomes '\''                              │
+│   Copy to result: '                                  │
+│                                                       │
+│ Position 1: '$'                                       │
+│   in_quote == '\'' (single quote)                    │
+│   Should expand? NO! Single quotes = literal         │
+│   Just copy the $                                    │
+│   result: '$                                         │
+│                                                       │
+│ Position 2-5: 'H' 'O' 'M' 'E'                        │
+│   Normal characters (we're in single quotes)         │
+│   Just copy them                                     │
+│   result: '$HOME                                     │
+│                                                       │
+│ Position 6: '\''                                      │
+│   Matches in_quote                                   │
+│   in_quote becomes 0                                 │
+│   Copy to result: '                                  │
+│   result: '$HOME'                                    │
+└──────────────────────────────────────────────────────┘
+
+After expansion:  '$HOME'
+After remove_quotes: $HOME   ← Literal string!
+```
+
+### Example 4: Exit Status
+
+**Input**: `$?`
+**Last exit status**: 127
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Position 0: '$'                                       │
+│   Should expand? YES                                 │
+│   Skip it, move to next char                         │
+│                                                       │
+│ Position 1: '?'                                       │
+│   Special case! $? means exit status                 │
+│   Call expand_exit_status()                          │
+│   Convert 127 to string "127"                        │
+│   Copy to result                                     │
+│   result: 127                                        │
+└──────────────────────────────────────────────────────┘
+
+Result: "127"
+```
+
+### Example 5: Undefined Variable
+
+**Input**: `$UNDEFINED`
+**Environment**: UNDEFINED is not set
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Position 0: '$'                                       │
+│   Should expand? YES                                 │
+│                                                       │
+│ Position 1-9: 'U' 'N' 'D' 'E' 'F' 'I' 'N' 'E' 'D'   │
+│   Read variable name: UNDEFINED                      │
+│                                                       │
+│ Look up in environment:                              │
+│   get_env_value(env, "UNDEFINED")                    │
+│   Returns: NULL (not found!)                         │
+│                                                       │
+│ Since NULL, copy nothing to result                   │
+│   result: "" (empty)                                 │
+└──────────────────────────────────────────────────────┘
+
+Result: "" (empty string)
+```
+
+---
+
+## Key Functions Explained
+
+### expand_variables() - Main Function
+
 ```c
 char *expand_variables(char *str, t_env *env, int exit_status)
 {
     t_exp_ctx c;
 
-    if (!init_ctx(&c, str, env, exit_status))
-        return (NULL);
-    while (str[c.i])
+    init_ctx(&c, str, env, exit_status);
+
+    while (str[c.i])  // Process each character
     {
-        if (is_ctx_quote(&c))
-            handle_quote(&c);
+        if (is_quote_char(&c))
+            handle_quote(&c);           // Track quote state
         else if (should_expand(&c))
-            process_dollar(&c);
+            process_dollar(&c);         // Expand $VAR
         else
-            c.result[c.j++] = c.str[c.i++];
+            c.result[c.j++] = c.str[c.i++];  // Just copy
     }
+
     c.result[c.j] = '\0';
     return (c.result);
 }
 ```
 
-**Purpose**: Main expansion function - process one string.
+### should_expand() - When to Expand
 
-**Logic**:
-1. For each character:
-   - If quote char → toggle quote state
-   - If `$` and not in single quotes → expand variable
-   - Otherwise → copy character as-is
-
----
-
-### init_ctx()
-```c
-static int init_ctx(t_exp_ctx *c, char *s, t_env *env, int st)
-{
-    size_t cap;
-
-    if (!s)
-        return (0);
-    c->str = s;
-    c->env = env;
-    c->exit_status = st;
-    c->in_quote = 0;
-    c->i = 0;
-    c->j = 0;
-    cap = ft_strlen(s) * 10 + 4096;  // Generous buffer
-    c->result = malloc(cap);
-    if (!c->result)
-        return (0);
-    return (c->result != NULL);
-}
-```
-
-**Purpose**: Initialize expansion context.
-
-**Why large buffer**: Variable expansion can make strings much longer (e.g., `$PATH` is often 500+ characters).
-
----
-
-### handle_quote()
-```c
-static void handle_quote(t_exp_ctx *c)
-{
-    if (!c->in_quote)
-        c->in_quote = c->str[c->i];    // Enter quote mode
-    else if (c->in_quote == c->str[c->i])
-        c->in_quote = 0;                // Exit quote mode
-    c->result[c->j++] = c->str[c->i++]; // Copy quote char
-}
-```
-
-**Purpose**: Track quote state for expansion decisions.
-
-**Note**: Quotes are copied to result here. They're removed later by `remove_quotes()`.
-
----
-
-### should_expand()
 ```c
 static int should_expand(t_exp_ctx *c)
 {
+    // Expand $ only if NOT in single quotes
     return (c->str[c->i] == '$' && c->in_quote != '\'');
 }
 ```
 
-**Purpose**: Check if `$` should trigger expansion.
+**Logic**:
+- See `$`? Check quote state
+- In single quotes (`'`)? Don't expand
+- Otherwise? Expand it!
 
-**Rule**: `$` is expanded EXCEPT inside single quotes.
+### process_dollar() - Handle $ Character
 
----
-
-## expander_vars.c
-
-### get_env_value()
-```c
-char *get_env_value(t_env *env, char *key)
-{
-    while (env)
-    {
-        if (ft_strcmp(env->key, key) == 0)
-            return (env->value);
-        env = env->next;
-    }
-    return (NULL);
-}
-```
-
-**Purpose**: Look up variable value in environment.
-
-**Returns**: NULL if not found (expands to empty string).
-
----
-
-### expand_exit_status()
-```c
-void expand_exit_status(char *result, int *j, int exit_status)
-{
-    char *tmp;
-    int  len;
-
-    if (!result || !j)
-        return;
-    tmp = ft_itoa(exit_status);
-    if (!tmp)
-        return;
-    len = ft_strlen(tmp);
-    ft_strcpy(&result[*j], tmp);
-    *j += len;
-    free(tmp);
-}
-```
-
-**Purpose**: Expand `$?` to exit status number.
-
-**Example**: If last command exited with 127, `$?` → `"127"`.
-
----
-
-### expand_var_name()
-```c
-void expand_var_name(t_exp_ctx *ctx)
-{
-    int     start;
-    char    *key;
-    char    *val;
-
-    start = ctx->i;
-    while (ft_isalnum((unsigned char)ctx->str[ctx->i])
-        || ctx->str[ctx->i] == '_')
-        ctx->i++;
-    if (ctx->i == start)
-    {
-        ctx->result[ctx->j++] = '$';  // Lone $ stays
-        return;
-    }
-    key = ft_substr(ctx->str, start, ctx->i - start);
-    if (!key)
-        return;
-    val = get_env_value(ctx->env, key);
-    if (val)
-        while (*val)
-            ctx->result[ctx->j++] = *val++;
-    free(key);
-}
-```
-
-**Purpose**: Expand `$VARNAME` to its value.
-
-**Variable name rules**:
-- Starts with letter or underscore
-- Contains letters, digits, underscores
-- `$123` → `$` followed by `123` (not a valid var name)
-
----
-
-## expander_utils.c
-
-### process_dollar()
 ```c
 void process_dollar(t_exp_ctx *c)
 {
+    // In single quotes? Just copy the $
     if (c->in_quote == '\'')
     {
-        c->result[c->j++] = c->str[c->i++];  // Copy $ literally
+        c->result[c->j++] = c->str[c->i++];
         return;
     }
+
     c->i++;  // Skip the $
+
+    // Is it $? (exit status)?
     if (c->str[c->i] == '?')
     {
         expand_exit_status(c->result, &c->j, c->exit_status);
         c->i++;
         return;
     }
+
+    // Otherwise, it's a variable name
     expand_var_name(c);
 }
 ```
 
-**Purpose**: Handle `$` - dispatch to appropriate expansion.
+### Variable Name Rules
 
-**Cases**:
-- In single quotes → keep literal `$`
-- `$?` → expand to exit status
-- `$VARNAME` → expand to variable value
-
----
-
-### expand_arg()
 ```c
-void expand_arg(char **arg, t_env *env, int exit_status)
-{
-    char *expanded;
-    char *unquoted;
+// Valid variable name characters:
+// - First char: letter or underscore
+// - Rest: letter, digit, or underscore
 
-    expanded = expand_variables(*arg, env, exit_status);
-    unquoted = remove_quotes(expanded);
-    free(*arg);
-    free(expanded);
-    *arg = unquoted;
-}
+// Examples:
+// HOME      → valid
+// _private  → valid
+// var123    → valid
+// 123var    → INVALID (starts with digit)
+// var-name  → INVALID (contains hyphen)
 ```
 
-**Purpose**: Full processing of one argument.
-
-**Steps**:
-1. Expand variables
-2. Remove quotes
-3. Replace original string
-
 ---
 
-### expand_cmd_args()
-```c
-void expand_cmd_args(t_cmd *cmd, t_env *env, int exit_status)
-{
-    int i;
+## Quote Removal
 
-    i = 0;
-    while (cmd->args && cmd->args[i])
-    {
-        expand_arg(&cmd->args[i], env, exit_status);
-        i++;
-    }
-    cmd->args = compact_args(cmd->args);
-}
-```
+After expansion, quotes are removed:
 
-**Purpose**: Expand all arguments of a command.
+### remove_quotes() - Strip Quotes
 
-**compact_args**: Removes empty strings (from undefined variables).
-
----
-
-## expander_quotes.c
-
-### remove_quotes()
 ```c
 char *remove_quotes(char *s)
 {
-    t_quote_ctx c;
-    char        *res;
+    char *result;
+    int i = 0, j = 0;
+    char quote = 0;
 
-    if (!s)
-        return (NULL);
-    c.i = 0;
-    c.j = 0;
-    c.quote = 0;
-    c.str = s;
-    res = malloc(ft_strlen(s) + 1);
-    if (!res)
-        return (NULL);
-    c.res = res;
-    while (s[c.i])
+    while (s[i])
     {
-        if (handle_quote(&c, s))
+        if (!quote && (s[i] == '\'' || s[i] == '"'))
+        {
+            quote = s[i];  // Enter quote
+            i++;           // Skip the opening quote
             continue;
-        c.res[c.j++] = s[c.i++];
+        }
+        if (quote && s[i] == quote)
+        {
+            quote = 0;     // Exit quote
+            i++;           // Skip the closing quote
+            continue;
+        }
+        result[j++] = s[i++];  // Copy character
     }
-    c.res[c.j] = '\0';
-    return (res);
+    result[j] = '\0';
+    return (result);
 }
 ```
 
-**Purpose**: Remove quotes from string.
-
-**Logic**:
-- Track quote state
-- When encountering quote that matches current state, skip it
-- Copy all other characters
+**Example**:
+```
+Input:  "hello" 'world'
+        ↓
+Process:
+  " → enter double quote, skip
+  h e l l o → copy
+  " → exit double quote, skip
+    → copy space
+  ' → enter single quote, skip
+  w o r l d → copy
+  ' → exit single quote, skip
+        ↓
+Output: hello world
+```
 
 ---
 
-## Expansion Examples
+## Complete Expansion Flow
 
-### Variable Expansion
 ```
-Input:   echo $HOME
-Step 1:  $HOME → /Users/john
-Step 2:  No quotes to remove
-Output:  echo /Users/john
+            Original argument
+                   │
+                   ▼
+    ┌──────────────────────────────┐
+    │      expand_variables()       │
+    │                               │
+    │   ┌────────────────────────┐ │
+    │   │ For each character:    │ │
+    │   │                        │ │
+    │   │  Quote? → track state  │ │
+    │   │  $? → expand variable  │ │
+    │   │  else → copy           │ │
+    │   └────────────────────────┘ │
+    └──────────────┬───────────────┘
+                   │
+                   ▼
+              Expanded string
+           (still has quotes)
+                   │
+                   ▼
+    ┌──────────────────────────────┐
+    │       remove_quotes()         │
+    │                               │
+    │   Remove " and ' characters  │
+    │   (respecting quote pairing) │
+    └──────────────┬───────────────┘
+                   │
+                   ▼
+             Final string
+          (ready for executor)
 ```
 
-### Single vs Double Quotes
-```
-Input:   echo "$HOME" '$HOME'
-Step 1:  "$HOME" → "/Users/john"  (expanded, quotes kept)
-         '$HOME' → '$HOME'         (NOT expanded)
-Step 2:  "/Users/john" → /Users/john  (quotes removed)
-         '$HOME' → $HOME              (quotes removed)
-Output:  echo /Users/john $HOME
+---
+
+## Practical Examples
+
+### Example: Building a Path
+
+```bash
+DIR="/home"
+FILE="config.txt"
+cat "$DIR/$FILE"
 ```
 
-### Exit Status
+**Expansion process**:
 ```
-Input:   echo $?
-Step 1:  $? → 0 (or whatever last exit code was)
-Output:  echo 0
+"$DIR/$FILE"
+    ↓
+Step 1: Expand $DIR → /home
+        "/home/$FILE"
+    ↓
+Step 2: Expand $FILE → config.txt
+        "/home/config.txt"
+    ↓
+Step 3: Remove quotes
+        /home/config.txt
 ```
+
+### Example: Preserving Spaces
+
+```bash
+NAME="John Doe"
+echo "Hello, $NAME"
+```
+
+**Why quotes matter**:
+```
+Without quotes:
+  echo Hello, $NAME
+  → echo Hello, John Doe
+  → 3 arguments: "Hello,", "John", "Doe"
+
+With quotes:
+  echo "Hello, $NAME"
+  → echo "Hello, John Doe"
+  → 1 argument: "Hello, John Doe"
+```
+
+### Example: Literal Dollar Sign
+
+```bash
+echo 'Price: $5.99'
+echo "Price: \$5.99"  # (we don't handle \, but concept is same)
+```
+
+**In minishell**:
+```
+echo 'Price: $5.99'
+    ↓
+Single quotes: no expansion
+    ↓
+Output: Price: $5.99
+```
+
+---
+
+## Edge Cases
 
 ### Empty Variable
-```
-Input:   echo $UNDEFINED hello
-Step 1:  $UNDEFINED → "" (empty)
-Step 2:  compact_args removes empty string
-Output:  echo hello
-```
-
-### Mixed Quoting
-```
-Input:   echo "Hello $USER, path is "'$PATH'
-Step 1:  "Hello $USER, path is " → "Hello john, path is "
-         '$PATH' → '$PATH' (not expanded)
-Step 2:  Remove quotes
-Output:  echo Hello john, path is $PATH
+```bash
+unset EMPTY
+echo "[$EMPTY]"
+# Output: []
+# The variable expands to nothing
 ```
 
----
-
-## Expansion Flow Diagram
-
+### Dollar at End
+```bash
+echo "Cost is $"
+# The $ has nothing after it
+# Output: Cost is $
+# Lone $ at end stays as $
 ```
-     t_cmd with raw args
-          │
-          ▼
-    ┌─────────────────────────────────────────┐
-    │         expand_cmd_args()                │
-    │                                          │
-    │   For each arg:                          │
-    │   ┌───────────────────────────────────┐ │
-    │   │         expand_arg()               │ │
-    │   │                                    │ │
-    │   │   ┌─────────────────────────┐     │ │
-    │   │   │   expand_variables()     │     │ │
-    │   │   │                          │     │ │
-    │   │   │   For each char:         │     │ │
-    │   │   │   - Quote? toggle state  │     │ │
-    │   │   │   - $? expand exit       │     │ │
-    │   │   │   - $VAR? expand var     │     │ │
-    │   │   │   - else copy            │     │ │
-    │   │   └──────────┬──────────────┘     │ │
-    │   │              │                     │ │
-    │   │   ┌──────────▼──────────────┐     │ │
-    │   │   │    remove_quotes()       │     │ │
-    │   │   └─────────────────────────┘     │ │
-    │   └───────────────────────────────────┘ │
-    │                                          │
-    │   ┌───────────────────────────────────┐ │
-    │   │       compact_args()               │ │
-    │   │   (remove empty strings)           │ │
-    │   └───────────────────────────────────┘ │
-    └─────────────────────────────────────────┘
-          │
-          ▼
-    t_cmd with expanded args
+
+### Adjacent Variables
+```bash
+A=Hello
+B=World
+echo "$A$B"
+# Output: HelloWorld
+```
+
+### Variable in Redirection Filename
+```bash
+FILE="output.txt"
+echo hello > $FILE
+# Expander runs on "output.txt"
+# Then executor opens output.txt
 ```
 
 ---
 
-## Key Concepts
+## Common Questions
 
-### Quote Rules Summary
-| Context | `$VAR` behavior |
-|---------|-----------------|
-| No quotes | Expanded |
-| Double quotes `"$VAR"` | Expanded |
-| Single quotes `'$VAR'` | NOT expanded (literal) |
+### Q: Why not expand in single quotes?
+**A**: Single quotes mean "take everything literally". This is useful for:
+- Printing special characters: `echo '$HOME'`
+- Avoiding accidents: `echo 'don't delete *'`
 
-### Why Two Passes?
-1. **Expand variables first**: Preserves quote context for expansion decisions
-2. **Remove quotes after**: Quotes served their purpose, now remove them
-
-### Edge Cases
-- `$` at end of string → literal `$`
-- `$$` → process ID (not implemented, kept literal)
-- `$1`, `$2` → positional params (not implemented, kept literal)
-- `$?` → always expands to exit status
-
-### Empty Variable Handling
-When `$UNDEFINED` expands to empty:
+### Q: What if a variable contains quotes?
+**A**: They're just characters in the value!
+```bash
+VAR='hello "world"'
+echo $VAR
+# Output: hello "world"
+# The quotes in the value are literal characters
 ```
-echo $UNDEFINED hello  →  echo hello  (not echo "" hello)
+
+### Q: Why expand before removing quotes?
+**A**: We need the quotes to know what to expand:
 ```
-The `compact_args()` function removes empty strings to match bash behavior.
+"$HOME"  → Expand $HOME, then remove quotes
+'$HOME'  → Don't expand, then remove quotes
+```
+If we removed quotes first, we'd lose this information!
+
+### Q: What about $$ (process ID)?
+**A**: Not implemented in mandatory minishell. It stays as literal `$$`.

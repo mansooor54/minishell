@@ -10,407 +10,552 @@
 
 ## What is the Environment?
 
-The environment is a set of key-value pairs inherited from the parent process. Programs use these to configure behavior (PATH for finding executables, HOME for user directory, etc.).
+Think of the environment like a **notebook with sticky notes**. Each sticky note has:
+- A **name** (like "HOME")
+- A **value** (like "/Users/mansoor")
 
-Minishell stores the environment as a linked list for easy modification.
+Programs read these notes to know things like:
+- Where is the user's home folder?
+- Where to find programs like `ls` or `grep`?
+- What is the username?
+
+**Real-life analogy**:
+Imagine you're a new employee. You get a notebook with:
+- `BOSS_NAME=John`
+- `OFFICE_LOCATION=Room 302`
+- `COFFEE_MACHINE=Kitchen`
+
+Now you know where to find things!
 
 ---
 
-## Data Structure
+## Visualizing the Environment
+
+### What your system gives us (envp)
+
+When minishell starts, the system gives us an array of strings:
+```
+envp[0] = "HOME=/Users/mansoor"
+envp[1] = "PATH=/usr/bin:/bin"
+envp[2] = "USER=mansoor"
+envp[3] = "SHELL=/bin/zsh"
+envp[4] = NULL  ← End marker
+```
+
+### What we convert it to (linked list)
+
+We convert this to a linked list for easier manipulation:
+```
+┌─────────────────────────┐    ┌─────────────────────────┐
+│ t_env node #1           │    │ t_env node #2           │
+│                         │    │                         │
+│ key:   "HOME"           │───►│ key:   "PATH"           │───►...───► NULL
+│ value: "/Users/mansoor" │    │ value: "/usr/bin:/bin"  │
+└─────────────────────────┘    └─────────────────────────┘
+```
+
+---
+
+## Data Structure Explained
 
 ```c
 typedef struct s_env
 {
-    char            *key;    // Variable name (e.g., "HOME")
-    char            *value;  // Variable value (e.g., "/Users/john")
-    struct s_env    *next;   // Next node in list
+    char            *key;    // The variable NAME
+    char            *value;  // The variable VALUE
+    struct s_env    *next;   // Pointer to next variable
 }   t_env;
 ```
 
-**Example environment**:
+**Simple example**:
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ key: "HOME"     │───►│ key: "PATH"     │───►│ key: "USER"     │───► NULL
-│ value: "/home"  │    │ value: "/bin"   │    │ value: "john"   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+For "HOME=/Users/mansoor":
+
+t_env node:
+┌──────────────────────────────┐
+│ key ────► "HOME"             │  ← The name
+│ value ──► "/Users/mansoor"   │  ← The value
+│ next ───► (next node or NULL)│  ← Link to next
+└──────────────────────────────┘
 ```
 
 ---
 
-## env.c
+## Step-by-Step: How Environment is Created
 
-### init_env()
+### Step 1: main() receives envp
+```c
+int main(int argc, char **argv, char **envp)
+```
+
+The `envp` looks like this in memory:
+```
+envp ───► ["HOME=/Users/mansoor", "PATH=/bin:/usr/bin", "USER=mansoor", NULL]
+             ↑                      ↑                    ↑              ↑
+           [0]                    [1]                  [2]          end marker
+```
+
+### Step 2: init_env() converts to linked list
+
 ```c
 t_env *init_env(char **envp)
 {
-    t_env   *env;
-    int     i;
-    char    *key;
-    char    *value;
-    char    *eq_pos;
-
-    env = NULL;
-    i = 0;
-    while (envp[i])
-    {
-        eq_pos = ft_strchr(envp[i], '=');
-        if (eq_pos)
-        {
-            key = ft_substr(envp[i], 0, eq_pos - envp[i]);
-            value = ft_strdup(eq_pos + 1);
-            add_env_node(&env, create_env_node(key, value));
-            free(key);
-            free(value);
-        }
-        i++;
-    }
-    return (env);
+    // For each string like "HOME=/Users/mansoor"
+    // 1. Find the '=' sign
+    // 2. Split into key ("HOME") and value ("/Users/mansoor")
+    // 3. Create a node
+    // 4. Add to linked list
 }
 ```
 
-**Purpose**: Convert envp array to linked list.
+**Visual process**:
+```
+Input: "HOME=/Users/mansoor"
+            ↑
+         eq_pos (position of '=')
 
-**Input**: `envp` from main() - array of "KEY=VALUE" strings
-**Output**: Linked list of t_env nodes
-
-**Process**:
-1. Find `=` position in each string
-2. Extract key (before `=`)
-3. Extract value (after `=`)
-4. Create and add node
+Step 1: key = "HOME"         (everything before '=')
+Step 2: value = "/Users/mansoor"  (everything after '=')
+Step 3: Create node with these values
+Step 4: Add to list
+```
 
 ---
 
-### init_shell()
+## Functions Explained with Examples
+
+### init_env() - Creating the environment
+
 ```c
-void init_shell(t_shell *shell, char **envp)
-{
-    ft_bzero(shell, sizeof(*shell));
-    if (isatty(STDIN_FILENO))
-        shell->interactive = 1;
-    shell->env = init_env(envp);
-    shell->exit_status = 0;
-    shell->should_exit = 0;
-    signal(SIGINT, SIG_IGN);
-    signal(SIGQUIT, SIG_IGN);
-}
+t_env *init_env(char **envp)
 ```
 
-**Purpose**: Initialize shell state including environment.
+**What it does**: Converts string array to linked list
 
----
-
-### increment_shlvl()
-```c
-void increment_shlvl(t_env **env)
-{
-    t_env   *current;
-    int     shlvl_value;
-
-    current = *env;
-    while (current)
-    {
-        if (ft_strcmp(current->key, "SHLVL") == 0)
-        {
-            shlvl_value = ft_atoi(current->value);
-            if (shlvl_value < 0)
-                shlvl_value = 0;
-            shlvl_value++;
-            free(current->value);
-            current->value = ft_itoa(shlvl_value);
-            if (!current->value)
-                current->value = ft_strdup("1");
-            return;
-        }
-        current = current->next;
-    }
-    add_env_node(env, create_env_node("SHLVL", "1"));
-}
+**Step-by-step example**:
 ```
+Input envp:
+  envp[0] = "HOME=/Users/mansoor"
+  envp[1] = "USER=mansoor"
+  envp[2] = NULL
 
-**Purpose**: Increment SHLVL when starting shell.
+Processing envp[0]: "HOME=/Users/mansoor"
+  │
+  ├── Find '=' at position 4
+  ├── Extract key: "HOME" (positions 0-3)
+  ├── Extract value: "/Users/mansoor" (after position 4)
+  └── Create node: { key: "HOME", value: "/Users/mansoor", next: NULL }
 
-**SHLVL**: Tracks shell nesting level.
-```bash
-echo $SHLVL    # 1
-./minishell
-echo $SHLVL    # 2
-./minishell
-echo $SHLVL    # 3
+Processing envp[1]: "USER=mansoor"
+  │
+  ├── Find '=' at position 4
+  ├── Extract key: "USER"
+  ├── Extract value: "mansoor"
+  └── Create node and link to previous
+
+Result:
+  ┌────────────────────┐    ┌────────────────────┐
+  │ key: "HOME"        │───►│ key: "USER"        │───► NULL
+  │ value: "/Users/..."│    │ value: "mansoor"   │
+  └────────────────────┘    └────────────────────┘
 ```
 
 ---
 
-## env_node.c
+### create_env_node() - Making a new node
 
-### create_env_node()
 ```c
 t_env *create_env_node(char *key, char *value)
-{
-    t_env *node;
-
-    node = malloc(sizeof(t_env));
-    if (!node)
-        return (NULL);
-    node->key = ft_strdup(key);
-    if (!node->key)
-    {
-        free(node);
-        return (NULL);
-    }
-    if (value)
-        node->value = ft_strdup(value);
-    else
-        node->value = NULL;
-    node->next = NULL;
-    return (node);
-}
 ```
 
-**Purpose**: Create a new environment node.
+**What it does**: Allocates memory and creates one node
 
-**Note**: Node owns copies of key and value (duplicated).
+**Example**:
+```c
+// Call:
+node = create_env_node("GREETING", "Hello");
+
+// Result:
+node ───► ┌──────────────────────┐
+          │ key ────► "GREETING" │
+          │ value ──► "Hello"    │
+          │ next ───► NULL       │
+          └──────────────────────┘
+```
+
+**Important**: It COPIES the strings (doesn't just point to them)
+```c
+// Inside the function:
+node->key = ft_strdup(key);      // Makes a COPY of "GREETING"
+node->value = ft_strdup(value);  // Makes a COPY of "Hello"
+```
+
+Why copy? Because the original might be freed or changed later!
 
 ---
 
-### add_env_node()
+### add_env_node() - Adding to the list
+
 ```c
 void add_env_node(t_env **env, t_env *new_node)
-{
-    t_env *current;
-
-    if (!new_node)
-        return;
-    if (!*env)
-    {
-        *env = new_node;
-        return;
-    }
-    current = *env;
-    while (current->next)
-        current = current->next;
-    current->next = new_node;
-}
 ```
 
-**Purpose**: Append node to end of list.
+**What it does**: Adds new node to end of list
+
+**Example**:
+```
+Before:
+  env ───► [HOME] ───► [PATH] ───► NULL
+
+Call: add_env_node(&env, [USER node])
+
+After:
+  env ───► [HOME] ───► [PATH] ───► [USER] ───► NULL
+                                    ↑
+                              new node added!
+```
+
+**Step-by-step**:
+```
+1. Start at first node (HOME)
+2. Walk to end: HOME → PATH → NULL
+3. Found NULL? Stop at PATH
+4. Set PATH->next = new_node
+5. Done!
+```
 
 ---
 
-### remove_env_node()
+### remove_env_node() - Removing from list (for `unset`)
+
 ```c
 void remove_env_node(t_env **env, char *key)
-{
-    t_env *current;
-    t_env *prev;
-
-    if (!*env || !key)
-        return;
-    current = *env;
-    prev = NULL;
-    while (current)
-    {
-        if (ft_strcmp(current->key, key) == 0)
-        {
-            if (prev)
-                prev->next = current->next;
-            else
-                *env = current->next;
-            free(current->key);
-            free(current->value);
-            free(current);
-            return;
-        }
-        prev = current;
-        current = current->next;
-    }
-}
 ```
 
-**Purpose**: Remove node by key (for `unset`).
+**What it does**: Finds and removes a node by key
+
+**Example - Removing "PATH"**:
+```
+Before:
+  env ───► [HOME] ───► [PATH] ───► [USER] ───► NULL
+
+Call: remove_env_node(&env, "PATH")
+
+Step 1: Start at HOME, is key "PATH"? No
+Step 2: Move to PATH, is key "PATH"? YES!
+Step 3: Link HOME to USER (skip PATH)
+Step 4: Free PATH node
+
+After:
+  env ───► [HOME] ───► [USER] ───► NULL
+                  ↑
+        PATH is gone! (and memory freed)
+```
+
+**Visual of relinking**:
+```
+Before removal:
+  [HOME]──►[PATH]──►[USER]
+    │        │        │
+   prev   current    next
+
+After removal:
+  [HOME]───────────►[USER]
+    │                 │
+   prev    (PATH      next
+           freed)
+```
 
 ---
 
-## env_utils.c
+### env_set_value() - Setting a variable (for `export`)
 
-### parse_env_string()
-```c
-void parse_env_string(char *env_str, char **key, char **value)
-{
-    char *eq;
-
-    eq = ft_strchr(env_str, '=');
-    if (eq)
-    {
-        *key = ft_substr(env_str, 0, eq - env_str);
-        *value = ft_strdup(eq + 1);
-    }
-    else
-    {
-        *key = ft_strdup(env_str);
-        *value = NULL;
-    }
-}
-```
-
-**Purpose**: Split "KEY=VALUE" or "KEY" string.
-
-**Used by**: `export` command
-
----
-
-### env_to_array()
-```c
-char **env_to_array(t_env *env)
-{
-    char    **envp;
-    char    *tmp;
-    int     i;
-
-    envp = malloc(sizeof(char *) * (count_env(env) + 1));
-    if (!envp)
-        return (NULL);
-    i = 0;
-    while (env)
-    {
-        if (env->value)
-        {
-            tmp = ft_strjoin(env->key, "=");
-            if (!tmp)
-                break;
-            envp[i] = ft_strjoin(tmp, env->value);
-            free(tmp);
-            if (!envp[i])
-                break;
-            i++;
-        }
-        env = env->next;
-    }
-    envp[i] = NULL;
-    return (envp);
-}
-```
-
-**Purpose**: Convert linked list back to array for `execve()`.
-
-**Why needed**: `execve()` requires `char **envp` format.
-
----
-
-### env_set_value()
 ```c
 void env_set_value(t_env **env, char *key, char *value)
-{
-    t_env *cur;
-
-    cur = *env;
-    while (cur)
-    {
-        if (ft_strcmp(cur->key, key) == 0)
-        {
-            free(cur->value);
-            if (value)
-                cur->value = ft_strdup(value);
-            else
-                cur->value = NULL;
-            return;
-        }
-        cur = cur->next;
-    }
-    add_env_node(env, create_env_node(key, value));
-}
 ```
 
-**Purpose**: Set variable (update if exists, create if not).
+**What it does**:
+- If variable exists → update its value
+- If variable doesn't exist → create new
 
-**Used by**: `export`, `cd` (for PWD/OLDPWD)
-
----
-
-## Environment Flow Diagram
-
+**Example 1 - Update existing**:
 ```
-Program Start (main)
-         │
-         ▼
-    ┌──────────────────────────────────────┐
-    │            init_env(envp)             │
-    │                                       │
-    │   envp[]:                             │
-    │   ["HOME=/home/user",                 │
-    │    "PATH=/usr/bin:/bin",              │
-    │    "USER=john", ...]                  │
-    │                                       │
-    │            ▼                          │
-    │                                       │
-    │   t_env linked list:                  │
-    │   HOME→PATH→USER→...→NULL             │
-    └──────────────────────────────────────┘
-         │
-         ▼
-    Shell Operations
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-  export    unset
-  VAR=x     VAR
-    │         │
-    ▼         ▼
-env_set   remove_env
-_value()  _node()
-    │         │
-    └────┬────┘
-         │
-         ▼
-    execve() needs array
-         │
-         ▼
-    ┌──────────────────────────────────────┐
-    │          env_to_array()               │
-    │                                       │
-    │   t_env list → char **envp            │
-    └──────────────────────────────────────┘
+Before:
+  [HOME="/old/path"] ───► [USER="john"] ───► NULL
+
+Call: env_set_value(&env, "HOME", "/new/path")
+
+After:
+  [HOME="/new/path"] ───► [USER="john"] ───► NULL
+         ↑
+   value changed!
+```
+
+**Example 2 - Create new**:
+```
+Before:
+  [HOME="/path"] ───► [USER="john"] ───► NULL
+
+Call: env_set_value(&env, "GREETING", "Hello")
+
+After:
+  [HOME="/path"] ───► [USER="john"] ───► [GREETING="Hello"] ───► NULL
+                                                ↑
+                                         new node added!
 ```
 
 ---
 
-## Special Environment Variables
+### env_to_array() - Converting back to array (for `execve`)
 
-| Variable | Purpose | Set By |
-|----------|---------|--------|
-| `PATH` | Executable search path | Inherited |
-| `HOME` | User's home directory | Inherited |
-| `PWD` | Current directory | `cd` builtin |
-| `OLDPWD` | Previous directory | `cd` builtin |
-| `SHLVL` | Shell nesting level | Shell init |
-| `?` | Exit status (pseudo-var) | Shell |
+```c
+char **env_to_array(t_env *env)
+```
+
+**What it does**: Converts linked list back to string array
+
+**Why needed**: When we run external programs with `execve()`, it needs `char **envp` format, not our linked list!
+
+**Example**:
+```
+Input (our linked list):
+  [HOME="/Users/mansoor"] ───► [USER="mansoor"] ───► NULL
+
+Output (array for execve):
+  envp[0] = "HOME=/Users/mansoor"
+  envp[1] = "USER=mansoor"
+  envp[2] = NULL
+```
+
+**Process**:
+```
+For each node:
+  1. Join key + "=" + value
+     "HOME" + "=" + "/Users/mansoor" = "HOME=/Users/mansoor"
+  2. Store in array
+```
 
 ---
 
-## Key Concepts
+## Complete Example: What happens with `export`
 
-### Why Linked List?
-- Easy insertion/deletion for `export`/`unset`
-- Variable order doesn't matter
-- Avoids reallocation when modifying
+User types: `export GREETING=Hello`
 
-### Variables Without Values
+```
+┌────────────────────────────────────────────────────────────────┐
+│ STEP 1: Parse the argument                                     │
+│                                                                │
+│ Input: "GREETING=Hello"                                        │
+│                                                                │
+│ parse_env_string("GREETING=Hello", &key, &value)              │
+│   → key = "GREETING"                                           │
+│   → value = "Hello"                                            │
+└────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│ STEP 2: Check if valid identifier                              │
+│                                                                │
+│ is_valid_identifier("GREETING") → YES                          │
+│   ✓ Starts with letter                                         │
+│   ✓ Contains only letters/numbers/underscore                   │
+└────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│ STEP 3: Set the value                                          │
+│                                                                │
+│ env_set_value(&shell->env, "GREETING", "Hello")               │
+│                                                                │
+│ Search list for "GREETING"...                                  │
+│   [HOME] → not it                                              │
+│   [USER] → not it                                              │
+│   [PATH] → not it                                              │
+│   NULL → not found!                                            │
+│                                                                │
+│ Create new node: [GREETING="Hello"]                            │
+│ Add to end of list                                             │
+└────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│ RESULT                                                         │
+│                                                                │
+│ Before:                                                        │
+│   [HOME] ───► [USER] ───► [PATH] ───► NULL                    │
+│                                                                │
+│ After:                                                         │
+│   [HOME] ───► [USER] ───► [PATH] ───► [GREETING] ───► NULL    │
+│                                              ↑                 │
+│                                         new variable!          │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Complete Example: What happens with `unset`
+
+User types: `unset PATH`
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ STEP 1: Find the node                                          │
+│                                                                │
+│ remove_env_node(&shell->env, "PATH")                          │
+│                                                                │
+│ Search:                                                        │
+│   [HOME] → is key "PATH"? No                                   │
+│   [USER] → is key "PATH"? No                                   │
+│   [PATH] → is key "PATH"? YES! Found it!                       │
+└────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│ STEP 2: Relink the list                                        │
+│                                                                │
+│ Before:                                                        │
+│   [HOME] ───► [USER] ───► [PATH] ───► [GREETING] ───► NULL    │
+│                 │           │              │                   │
+│                prev      current         next                  │
+│                                                                │
+│ Link prev->next to current->next:                              │
+│   [USER]->next = [PATH]->next                                  │
+│   [USER]->next = [GREETING]                                    │
+└────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│ STEP 3: Free the removed node                                  │
+│                                                                │
+│ free(current->key);    // Free "PATH"                          │
+│ free(current->value);  // Free "/usr/bin:/bin"                 │
+│ free(current);         // Free the node itself                 │
+└────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│ RESULT                                                         │
+│                                                                │
+│ After:                                                         │
+│   [HOME] ───► [USER] ───► [GREETING] ───► NULL                │
+│                      ↑                                         │
+│              PATH is gone!                                     │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Why Linked List Instead of Array?
+
+### With Array (harder):
+```
+To add "NEW=value":
+  1. Count current size (n)
+  2. Allocate new array of size n+2
+  3. Copy all n strings
+  4. Add new string
+  5. Free old array
+
+To remove:
+  1. Find index
+  2. Allocate new array of size n
+  3. Copy all strings except removed one
+  4. Free old strings and array
+```
+
+### With Linked List (easier):
+```
+To add "NEW=value":
+  1. Create node
+  2. Walk to end
+  3. Link it
+
+To remove:
+  1. Find node
+  2. Update previous->next
+  3. Free node
+```
+
+Much simpler!
+
+---
+
+## Special Variables
+
+| Variable | What it's for | Example Value | Who sets it |
+|----------|---------------|---------------|-------------|
+| `HOME` | User's home directory | `/Users/mansoor` | System |
+| `PATH` | Where to find programs | `/usr/bin:/bin` | System |
+| `PWD` | Current directory | `/Users/mansoor/minishell` | `cd` command |
+| `OLDPWD` | Previous directory | `/Users/mansoor` | `cd` command |
+| `USER` | Username | `mansoor` | System |
+| `SHLVL` | Shell nesting level | `1`, `2`, `3`... | Shell |
+| `?` | Exit status | `0`, `1`, `127`... | Shell (special) |
+
+---
+
+## Memory Management Rules
+
+### Rule 1: Always copy strings
+```c
+// WRONG:
+node->key = key;  // Just points to original!
+
+// RIGHT:
+node->key = ft_strdup(key);  // Makes a copy!
+```
+
+### Rule 2: Free before replacing
+```c
+// WRONG:
+node->value = new_value;  // Old value is leaked!
+
+// RIGHT:
+free(node->value);        // Free old value first
+node->value = ft_strdup(new_value);  // Then set new
+```
+
+### Rule 3: Free everything when removing
+```c
+// When removing a node:
+free(node->key);    // Free the key string
+free(node->value);  // Free the value string
+free(node);         // Free the node itself
+```
+
+---
+
+## Common Questions
+
+### Q: Why does `env` show variables but not `export VAR` (without value)?
+
+**Answer**: `env` only shows variables that have values assigned.
+
 ```bash
-export VAR      # VAR exists but has no value
-echo $VAR       # Prints nothing
-env | grep VAR  # Not shown (env only shows KEY=VALUE)
+export VAR          # Creates VAR but no value
+env | grep VAR      # Nothing! (no value means not shown)
+export VAR=hello    # Now VAR has a value
+env | grep VAR      # VAR=hello (now it shows!)
 ```
 
-In our implementation, `node->value = NULL` means "exists but no value".
+### Q: What happens to $PATH after `unset PATH`?
 
-### Environment Inheritance
-When `fork()` is called:
-1. Child gets copy of parent's environment
-2. We convert our linked list to array for `execve()`
-3. Child program receives the array
+**Answer**: Commands like `ls` won't be found!
 
-### Memory Management
-- Each node owns its key and value (copies, not references)
-- When removing/updating, must `free()` old strings
-- `free_env()` walks list and frees everything
+```bash
+echo $PATH          # /usr/bin:/bin
+ls                  # Works!
+unset PATH
+ls                  # minishell: ls: command not found
+```
+
+### Q: Why do we need to convert back to array for execve?
+
+**Answer**: That's what the system call requires!
+
+```c
+// execve signature:
+int execve(const char *path, char *const argv[], char *const envp[]);
+                                                        ↑
+                                            Must be array, not linked list!
+```

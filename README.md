@@ -20,15 +20,15 @@ Minishell is a simple shell implementation following 42 School constraints:
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| Prompt | Displays `minishell>` when waiting for input |
-| History | Arrow keys navigate command history |
-| Pipes | `cmd1 \| cmd2 \| cmd3` pipeline execution |
-| Redirections | `<` input, `>` output, `>>` append, `<<` heredoc |
-| Variables | `$VAR` expansion, `$?` exit status |
-| Quotes | Single quotes preserve literals, double quotes allow `$` expansion |
-| Signals | ctrl-C (new prompt), ctrl-D (exit), ctrl-\ (ignored) |
+| Feature      | Description                                                        |
+|--------------|--------------------------------------------------------------------|
+| Prompt       | Displays `minishell>` when waiting for input                       |
+| History      | Arrow keys navigate command history                                |
+| Pipes        | `cmd1 \| cmd2 \| cmd3` pipeline execution                          |
+| Redirections | `<` input, `>` output, `>>` append, `<<` heredoc                   |
+| Variables    | `$VAR` expansion, `$?` exit status                                 |
+| Quotes       | Single quotes preserve literals, double quotes allow `$` expansion |
+| Signals      | ctrl-C (new prompt), ctrl-D (exit), ctrl-\ (ignored)               |
 
 ## Project Structure
 

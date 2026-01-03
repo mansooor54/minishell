@@ -14,24 +14,39 @@
 
 ## What is the Parser?
 
-The parser takes the token list from the lexer and builds a structured representation (Abstract Syntax Tree / AST) that the executor can understand.
+**Real-life analogy**: The parser is like a **recipe organizer**:
 
+The lexer gave us ingredients (tokens):
 ```
-Tokens:  [WORD:"ls"] → [PIPE:"|"] → [WORD:"grep"] → [WORD:"foo"]
+["flour"] ["sugar"] ["mix"] ["eggs"] ["bake"]
+```
 
-Parser Output:
-    t_pipeline
-    └── cmds:
-        ├── t_cmd { args: ["ls"], redirs: NULL }
-        │   └── next:
-        └── t_cmd { args: ["grep", "foo"], redirs: NULL }
+The parser organizes them into a recipe structure:
+```
+Recipe:
+├── Step 1: Combine ["flour", "sugar"]
+│           Action: "mix"
+└── Step 2: Add ["eggs"]
+            Action: "bake"
+```
+
+In shell terms:
+```
+Tokens:  [ls] [-la] [|] [grep] [.c]
+
+Parser creates:
+Pipeline:
+├── Command 1: {args: ["ls", "-la"]}
+│              └── next →
+└── Command 2: {args: ["grep", ".c"]}
 ```
 
 ---
 
 ## Data Structures
 
-### t_cmd (Single Command)
+### t_cmd - Single Command
+
 ```c
 typedef struct s_cmd
 {
@@ -42,7 +57,29 @@ typedef struct s_cmd
 }   t_cmd;
 ```
 
-### t_redir (Redirection)
+**Visual**:
+```
+For command: grep foo
+
+┌─────────────────────────────────────────┐
+│              t_cmd                       │
+├─────────────────────────────────────────┤
+│ args ──────► ["grep", "foo", NULL]      │
+│              ┌────┬─────┬──────┐        │
+│              │ [0]│ [1] │ [2]  │        │
+│              │grep│ foo │ NULL │        │
+│              └────┴─────┴──────┘        │
+│                                          │
+│ redirs ────► NULL (no redirections)     │
+│                                          │
+│ next ──────► NULL (no more commands)    │
+│                                          │
+│ expanded ──► 0 (not yet expanded)       │
+└─────────────────────────────────────────┘
+```
+
+### t_redir - Redirection
+
 ```c
 typedef struct s_redir
 {
@@ -52,11 +89,22 @@ typedef struct s_redir
 }   t_redir;
 ```
 
-### t_pipeline (Pipeline)
+**Visual for: `< input.txt > output.txt`**:
+```
+┌──────────────────────┐    ┌──────────────────────┐
+│      t_redir #1      │    │      t_redir #2      │
+├──────────────────────┤    ├──────────────────────┤
+│ type: REDIR_IN (<)   │───►│ type: REDIR_OUT (>)  │───► NULL
+│ file: "input.txt"    │    │ file: "output.txt"   │
+└──────────────────────┘    └──────────────────────┘
+```
+
+### t_pipeline - Pipeline Container
+
 ```c
 typedef struct s_pipeline
 {
-    t_cmd           *cmds;      // Commands in this pipeline
+    t_cmd           *cmds;      // Linked list of commands
     t_token_type    logic_op;   // (unused in mandatory)
     struct s_pipeline *next;    // (unused in mandatory)
 }   t_pipeline;
@@ -64,98 +112,230 @@ typedef struct s_pipeline
 
 ---
 
-## parser_pipeline.c
+## Parsing Examples - Step by Step
 
-### parser()
+### Example 1: Simple Command
+
+**Input**: `echo hello world`
+
+**Tokens from lexer**:
+```
+[WORD:"echo"] → [WORD:"hello"] → [WORD:"world"] → NULL
+```
+
+**Parser process**:
+```
+┌──────────────────────────────────────────────────────┐
+│ Step 1: create_pipeline()                            │
+│         Allocate new t_pipeline                      │
+│                                                       │
+│ Step 2: parse_pipe_sequence(&tokens)                 │
+│         └── parse_command(&tokens)                   │
+│             ├── count_args() = 3                     │
+│             ├── Allocate args[4] (3 + NULL)          │
+│             ├── args[0] = "echo"                     │
+│             ├── args[1] = "hello"                    │
+│             ├── args[2] = "world"                    │
+│             └── args[3] = NULL                       │
+│                                                       │
+│ Step 3: No PIPE token, done                          │
+└──────────────────────────────────────────────────────┘
+
+Result:
+┌─────────────────────────────────────┐
+│           t_pipeline                │
+├─────────────────────────────────────┤
+│ cmds ──► t_cmd                      │
+│          ├── args: ["echo",         │
+│          │         "hello",         │
+│          │         "world", NULL]   │
+│          ├── redirs: NULL           │
+│          └── next: NULL             │
+└─────────────────────────────────────┘
+```
+
+### Example 2: Pipeline
+
+**Input**: `ls -la | grep .c | wc -l`
+
+**Tokens from lexer**:
+```
+[WORD:"ls"] → [WORD:"-la"] → [PIPE:"|"] →
+[WORD:"grep"] → [WORD:".c"] → [PIPE:"|"] →
+[WORD:"wc"] → [WORD:"-l"] → NULL
+```
+
+**Parser process**:
+```
+┌──────────────────────────────────────────────────────┐
+│ parse_pipe_sequence(&tokens):                         │
+│                                                       │
+│ Iteration 1:                                          │
+│   parse_command() → {args: ["ls", "-la"]}            │
+│   Next token is PIPE → skip it, continue             │
+│                                                       │
+│ Iteration 2:                                          │
+│   parse_command() → {args: ["grep", ".c"]}           │
+│   Next token is PIPE → skip it, continue             │
+│                                                       │
+│ Iteration 3:                                          │
+│   parse_command() → {args: ["wc", "-l"]}             │
+│   Next token is NULL → done                          │
+│                                                       │
+│ Link them: cmd1 → cmd2 → cmd3                        │
+└──────────────────────────────────────────────────────┘
+
+Result:
+┌─────────────────────────────────────────────────────────────┐
+│                        t_pipeline                            │
+├─────────────────────────────────────────────────────────────┤
+│ cmds ──►┌───────────────┐   ┌───────────────┐   ┌──────────┐│
+│         │ t_cmd #1      │──►│ t_cmd #2      │──►│ t_cmd #3 ││
+│         │ args:         │   │ args:         │   │ args:    ││
+│         │ ["ls","-la"]  │   │ ["grep",".c"] │   │ ["wc",   ││
+│         │               │   │               │   │  "-l"]   ││
+│         └───────────────┘   └───────────────┘   └──────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Example 3: Command with Redirections
+
+**Input**: `cat < input.txt > output.txt`
+
+**Tokens from lexer**:
+```
+[WORD:"cat"] → [REDIR_IN:"<"] → [WORD:"input.txt"] →
+[REDIR_OUT:">"] → [WORD:"output.txt"] → NULL
+```
+
+**Parser process**:
+```
+┌──────────────────────────────────────────────────────┐
+│ parse_command(&tokens):                               │
+│                                                       │
+│ Step 1: count_args()                                  │
+│         - See WORD "cat" → count = 1                 │
+│         - See REDIR_IN → skip 2 tokens (< + file)    │
+│         - See REDIR_OUT → skip 2 tokens (> + file)   │
+│         - Result: 1 argument                          │
+│                                                       │
+│ Step 2: Allocate args[2] (1 + NULL)                  │
+│                                                       │
+│ Step 3: consume_redirs() - handle < input.txt        │
+│         - Create t_redir {REDIR_IN, "input.txt"}     │
+│         - Add to cmd->redirs                          │
+│                                                       │
+│ Step 4: Process WORD "cat"                           │
+│         - args[0] = "cat"                             │
+│                                                       │
+│ Step 5: consume_redirs() - handle > output.txt       │
+│         - Create t_redir {REDIR_OUT, "output.txt"}   │
+│         - Add to cmd->redirs                          │
+│                                                       │
+│ Step 6: args[1] = NULL                               │
+└──────────────────────────────────────────────────────┘
+
+Result:
+┌─────────────────────────────────────────────────────────────┐
+│                         t_cmd                                │
+├─────────────────────────────────────────────────────────────┤
+│ args ──► ["cat", NULL]                                      │
+│                                                              │
+│ redirs ──► ┌──────────────────┐   ┌──────────────────┐      │
+│            │ type: REDIR_IN   │──►│ type: REDIR_OUT  │──►NULL│
+│            │ file: "input.txt"│   │ file: "output.txt"│      │
+│            └──────────────────┘   └──────────────────┘      │
+│                                                              │
+│ next ──► NULL                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Syntax Validation
+
+### Why Validate Before Parsing?
+
+The parser assumes valid input. Invalid syntax would cause crashes or undefined behavior.
+
+### validate_syntax() - The Checks
+
 ```c
-t_pipeline *parser(t_token *tokens)
+int validate_syntax(t_token *tokens, t_shell *shell)
 {
-    t_pipeline *head;
-    t_pipeline *node;
+    // Check 1: First token can't be a pipe
+    if (!validate_first_token(tokens))
+        return (0);
 
-    head = NULL;
-    while (tokens)
+    // Check 2: Each pair of adjacent tokens must be valid
+    while (current && current->next)
     {
-        if (!tokens || tokens->type == TOKEN_EOF)
-            break;
-        node = create_pipeline();
-        node->cmds = parse_pipe_sequence(&tokens);
-        set_logic_and_advance(node, &tokens);
-        append_pipeline(&head, node);
-        if (!tokens || tokens->type == TOKEN_EOF)
-            break;
+        if (!validate_token_pair(current, current->next))
+            return (0);
+        current = current->next;
     }
-    return (head);
+
+    // Check 3: Last token can't be a redirection or pipe
+    if (!validate_last_token(last))
+        return (0);
+
+    return (1);  // All good!
 }
 ```
 
-**Purpose**: Main parser entry point - builds pipeline list from tokens.
+### Syntax Error Examples
 
----
+**Error 1: Pipe at start**
+```
+Input: | ls
+Error: minishell: syntax error near unexpected token `|'
+Exit code: 2
 
-### create_pipeline()
-```c
-static t_pipeline *create_pipeline(void)
-{
-    t_pipeline *pipeline;
-
-    pipeline = malloc(sizeof(t_pipeline));
-    if (!pipeline)
-        return (NULL);
-    pipeline->cmds = NULL;
-    pipeline->logic_op = TOKEN_EOF;
-    pipeline->next = NULL;
-    return (pipeline);
-}
+Why? Nothing to pipe FROM
 ```
 
-**Purpose**: Allocate a new pipeline node.
+**Error 2: Pipe at end**
+```
+Input: ls |
+Error: minishell: syntax error near unexpected token `newline'
+Exit code: 2
 
----
-
-### parse_pipe_sequence()
-```c
-t_cmd *parse_pipe_sequence(t_token **tokens)
-{
-    t_cmd *cmds;
-    t_cmd *new_cmd;
-    t_cmd *current;
-
-    cmds = NULL;
-    while (*tokens)
-    {
-        new_cmd = parse_command(tokens);
-        if (!cmds)
-            cmds = new_cmd;
-        else
-        {
-            current = cmds;
-            while (current->next)
-                current = current->next;
-            current->next = new_cmd;
-        }
-        if (*tokens && (*tokens)->type == TOKEN_PIPE)
-            *tokens = (*tokens)->next;  // Skip pipe token
-        else
-            break;
-    }
-    return (cmds);
-}
+Why? Nothing to pipe TO
 ```
 
-**Purpose**: Parse a sequence of commands separated by pipes.
+**Error 3: Double pipe**
+```
+Input: ls || grep
+Error: minishell: syntax error near unexpected token `|'
+Exit code: 2
 
-**Logic**:
-1. Parse first command
-2. If next token is PIPE, skip it and parse next command
-3. Link commands together
-4. Stop when no more pipes
+Why? || is not supported in mandatory
+```
+
+**Error 4: Redirection without file**
+```
+Input: cat >
+Error: minishell: syntax error near unexpected token `newline'
+Exit code: 2
+
+Why? > needs a filename
+```
+
+**Error 5: Consecutive redirections without file**
+```
+Input: cat > < file
+Error: minishell: syntax error near unexpected token `<'
+Exit code: 2
+
+Why? > needs a filename, got < instead
+```
 
 ---
 
-## parser.c
+## Key Parser Functions
 
-### parse_command()
+### parse_command() - Main Command Parser
+
 ```c
 t_cmd *parse_command(t_token **tokens)
 {
@@ -163,205 +343,78 @@ t_cmd *parse_command(t_token **tokens)
     int     i;
     int     arg_count;
 
-    if (!tokens || !*tokens)
-        return (NULL);
+    // Count how many words (to allocate args array)
     arg_count = count_args(*tokens);
     cmd = new_cmd(arg_count);
-    if (!cmd)
-        return (NULL);
+
     i = 0;
-    consume_redirs(tokens, cmd);          // Handle leading redirections
+    consume_redirs(tokens, cmd);  // Handle leading redirections
+
+    // Process each WORD token
     while (*tokens && (*tokens)->type == TOKEN_WORD)
     {
         cmd->args[i] = ft_strdup((*tokens)->value);
-        if (!cmd->args[i])
-            break;
         i++;
         *tokens = (*tokens)->next;
-        consume_redirs(tokens, cmd);      // Handle redirections between words
+        consume_redirs(tokens, cmd);  // Handle redirections between words
     }
+
     cmd->args[i] = NULL;
     return (cmd);
 }
 ```
 
-**Purpose**: Parse a single command (words + redirections).
+### Why consume_redirs() is called multiple times?
 
-**Why consume_redirs before and during**:
-Redirections can appear anywhere in a command:
-- `< input.txt cat` (before command)
-- `cat < input.txt` (after command)
-- `cat file1 > out.txt file2` (between arguments)
+Redirections can appear ANYWHERE in a command:
 
----
+```
+< input cat        ← Before command
+cat < input        ← After command name
+cat file1 > out file2  ← Between arguments
+```
 
-### count_args()
+All these are valid and equivalent to:
+```
+cat file1 file2 < input > out
+```
+
+### count_args() - Counting Words
+
 ```c
 static int count_args(t_token *tokens)
 {
-    int count;
+    int count = 0;
 
-    count = 0;
-    while (tokens && (tokens->type == TOKEN_WORD
-            || tokens->type == TOKEN_REDIR_IN
-            || tokens->type == TOKEN_REDIR_OUT
-            || tokens->type == TOKEN_REDIR_APPEND
-            || tokens->type == TOKEN_REDIR_HEREDOC))
+    while (tokens && is_word_or_redir(tokens))
     {
         if (tokens->type == TOKEN_WORD)
         {
             count++;
             tokens = tokens->next;
         }
-        else if (tokens->next)
-            tokens = tokens->next->next;  // Skip redir + filename
-        else
-            break;
+        else  // It's a redirection
+        {
+            // Skip redir token AND its filename
+            tokens = tokens->next;  // Skip <, >, <<, >>
+            if (tokens)
+                tokens = tokens->next;  // Skip filename
+        }
     }
     return (count);
 }
 ```
 
-**Purpose**: Count word tokens (skip redirection pairs).
-
-**Why**: Need to allocate correct size for args array.
-
----
-
-### consume_redirs()
-```c
-static void consume_redirs(t_token **tokens, t_cmd *cmd)
-{
-    t_redir *new_redir;
-
-    while (*tokens && ((*tokens)->type == TOKEN_REDIR_IN
-            || (*tokens)->type == TOKEN_REDIR_OUT
-            || (*tokens)->type == TOKEN_REDIR_APPEND
-            || (*tokens)->type == TOKEN_REDIR_HEREDOC))
-    {
-        new_redir = parse_single_redirection(tokens);
-        if (!new_redir)
-            break;
-        append_redir(&cmd->redirs, new_redir);
-    }
-}
+**Example: `cat < input.txt -n > output.txt`**
 ```
+Token: cat         → count = 1
+Token: <           → skip
+Token: input.txt   → skip (filename)
+Token: -n          → count = 2
+Token: >           → skip
+Token: output.txt  → skip (filename)
 
-**Purpose**: Consume all consecutive redirections and add to command.
-
----
-
-### parse_single_redirection()
-```c
-static t_redir *parse_single_redirection(t_token **tokens)
-{
-    t_redir *redir;
-
-    if (!*tokens)
-        return (NULL);
-    if ((*tokens)->type != TOKEN_REDIR_IN
-        && (*tokens)->type != TOKEN_REDIR_OUT
-        && (*tokens)->type != TOKEN_REDIR_APPEND
-        && (*tokens)->type != TOKEN_REDIR_HEREDOC)
-        return (NULL);
-    if (!(*tokens)->next || !(*tokens)->next->value)
-    {
-        ft_putendl_fd("minishell: syntax error near unexpected token `newline'", 2);
-        return (NULL);
-    }
-    redir = create_redir((*tokens)->type, (*tokens)->next->value);
-    if (!redir)
-        return (NULL);
-    *tokens = (*tokens)->next->next;  // Skip redir + filename
-    return (redir);
-}
-```
-
-**Purpose**: Parse one redirection (operator + filename).
-
----
-
-## parser_syntax_check.c
-
-### validate_syntax()
-```c
-int validate_syntax(t_token *tokens, t_shell *shell)
-{
-    t_token *current;
-    t_token *last;
-
-    (void)shell;
-    if (!tokens)
-        return (1);
-    if (!validate_first_token(tokens))
-        return (0);
-    current = tokens;
-    last = tokens;
-    while (current && current->next)
-    {
-        if (!validate_token_pair(current, current->next))
-            return (0);
-        current = current->next;
-        last = current;
-    }
-    if (!validate_last_token(last))
-        return (0);
-    return (1);
-}
-```
-
-**Purpose**: Validate token sequence before parsing.
-
-**Checks**:
-1. First token cannot be a pipe
-2. Adjacent tokens must be valid pairs
-3. Last token cannot be a redirection without filename
-
----
-
-### validate_first_token()
-```c
-static int validate_first_token(t_token *first)
-{
-    if (is_separator_token(first))
-    {
-        print_syntax_error(first);
-        return (0);
-    }
-    return (1);
-}
-```
-
-**Purpose**: First token cannot be `|`.
-
-**Example errors**:
-```
-| ls        ← Error: pipe at start
-ls | grep   ← OK
-```
-
----
-
-### validate_last_token()
-```c
-static int validate_last_token(t_token *last)
-{
-    if (last && (is_separator_token(last) || is_redirection(last)))
-    {
-        print_syntax_error(NULL);
-        return (0);
-    }
-    return (1);
-}
-```
-
-**Purpose**: Cannot end with pipe or redirection.
-
-**Example errors**:
-```
-ls |            ← Error: nothing after pipe
-ls >            ← Error: no filename after >
-ls > file.txt   ← OK
+Result: 2 arguments ("cat" and "-n")
 ```
 
 ---
@@ -369,106 +422,173 @@ ls > file.txt   ← OK
 ## Parser Flow Diagram
 
 ```
-     Token List
-          │
-          ▼
-    ┌─────────────┐
-    │  validate_  │─── Error ──► Exit with code 2
-    │   syntax()  │
-    └──────┬──────┘
-           │ OK
-           ▼
-    ┌─────────────┐
-    │  parser()   │
-    └──────┬──────┘
-           │
-           ▼
-    ┌─────────────────────────────────────────┐
-    │         parse_pipe_sequence()            │
-    │                                          │
-    │   ┌─────────────────────────────────┐   │
-    │   │    parse_command() [first]      │   │
-    │   └───────────────┬─────────────────┘   │
-    │                   │                      │
-    │        ──── If PIPE token ────           │
-    │                   │                      │
-    │   ┌─────────────────────────────────┐   │
-    │   │    parse_command() [second]     │   │
-    │   └───────────────┬─────────────────┘   │
-    │                   │                      │
-    │               (repeat)                   │
-    └─────────────────────────────────────────┘
-           │
-           ▼
-    t_pipeline with linked t_cmd list
+         Token List from Lexer
+                  │
+                  ▼
+         ┌────────────────────┐
+         │  validate_syntax() │
+         └─────────┬──────────┘
+                   │
+          Valid? ──┼── Invalid?
+                   │        │
+                   │        ▼
+                   │   Print error
+                   │   exit_status = 2
+                   │   return NULL
+                   │
+                   ▼
+         ┌────────────────────┐
+         │     parser()       │
+         └─────────┬──────────┘
+                   │
+                   ▼
+    ┌──────────────────────────────────┐
+    │     parse_pipe_sequence()        │
+    │                                   │
+    │   ┌─────────────────────────┐    │
+    │   │   parse_command() #1    │    │
+    │   │                         │    │
+    │   │ ┌─────────────────────┐ │    │
+    │   │ │ count_args()        │ │    │
+    │   │ └─────────────────────┘ │    │
+    │   │          ↓              │    │
+    │   │ ┌─────────────────────┐ │    │
+    │   │ │ new_cmd(count)      │ │    │
+    │   │ └─────────────────────┘ │    │
+    │   │          ↓              │    │
+    │   │ ┌─────────────────────┐ │    │
+    │   │ │ consume_redirs()    │←┼────┼─── Repeated for each
+    │   │ └─────────────────────┘ │    │    word and between
+    │   │          ↓              │    │    arguments
+    │   │ ┌─────────────────────┐ │    │
+    │   │ │ Copy word to args[] │ │    │
+    │   │ └─────────────────────┘ │    │
+    │   └─────────────────────────┘    │
+    │              │                    │
+    │         Is next PIPE?             │
+    │              │                    │
+    │         Yes──┼──No                │
+    │              │    │               │
+    │              ▼    └──► Done       │
+    │   ┌─────────────────────────┐    │
+    │   │   parse_command() #2    │    │
+    │   └─────────────────────────┘    │
+    │              │                    │
+    │         (repeat)                  │
+    └──────────────────────────────────┘
+                   │
+                   ▼
+            t_pipeline with
+            linked t_cmd list
 ```
 
 ---
 
-## Parsing Examples
+## Complete Parsing Example
 
-### Simple Command
+**Input**: `cat file.txt | grep error | head -5 > result.txt`
+
+**Token list**:
 ```
-Input:  echo hello world
-Tokens: [WORD:"echo"] → [WORD:"hello"] → [WORD:"world"]
-
-Result:
-    t_pipeline
-    └── cmds: t_cmd
-            ├── args: ["echo", "hello", "world", NULL]
-            ├── redirs: NULL
-            └── next: NULL
+[cat] → [file.txt] → [|] → [grep] → [error] → [|] →
+[head] → [-5] → [>] → [result.txt] → NULL
 ```
 
-### Pipeline
-```
-Input:  ls -la | grep ".c" | wc -l
-Tokens: [WORD:"ls"] [WORD:"-la"] [PIPE] [WORD:"grep"] [WORD:".c"] [PIPE] [WORD:"wc"] [WORD:"-l"]
+**Step-by-step parsing**:
 
-Result:
-    t_pipeline
-    └── cmds: t_cmd { args: ["ls", "-la"] }
-              └── next: t_cmd { args: ["grep", ".c"] }
-                        └── next: t_cmd { args: ["wc", "-l"] }
+```
+┌─────────────────────────────────────────────────────────────┐
+│ parse_pipe_sequence():                                       │
+│                                                              │
+│ COMMAND 1:                                                   │
+│   Tokens: [cat] [file.txt] [|]...                           │
+│   count_args() = 2                                           │
+│   consume_redirs() → none                                    │
+│   args[0] = "cat"                                            │
+│   consume_redirs() → none                                    │
+│   args[1] = "file.txt"                                       │
+│   consume_redirs() → none                                    │
+│   args[2] = NULL                                             │
+│   Stop at [|], skip it                                       │
+│                                                              │
+│ COMMAND 2:                                                   │
+│   Tokens: [grep] [error] [|]...                             │
+│   count_args() = 2                                           │
+│   args[0] = "grep"                                           │
+│   args[1] = "error"                                          │
+│   args[2] = NULL                                             │
+│   Stop at [|], skip it                                       │
+│                                                              │
+│ COMMAND 3:                                                   │
+│   Tokens: [head] [-5] [>] [result.txt]                      │
+│   count_args():                                              │
+│     [head] → count = 1                                       │
+│     [-5] → count = 2                                         │
+│     [>] → skip                                               │
+│     [result.txt] → skip (filename for >)                    │
+│   count = 2                                                  │
+│   args[0] = "head"                                           │
+│   args[1] = "-5"                                             │
+│   consume_redirs() at end:                                   │
+│     Create t_redir{REDIR_OUT, "result.txt"}                 │
+│   args[2] = NULL                                             │
+│   No more tokens, done                                       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### With Redirections
+**Result structure**:
 ```
-Input:  cat < input.txt > output.txt
-Tokens: [WORD:"cat"] [REDIR_IN] [WORD:"input.txt"] [REDIR_OUT] [WORD:"output.txt"]
-
-Result:
-    t_pipeline
-    └── cmds: t_cmd
-            ├── args: ["cat", NULL]
-            ├── redirs: t_redir { type: REDIR_IN, file: "input.txt" }
-            │           └── next: t_redir { type: REDIR_OUT, file: "output.txt" }
-            └── next: NULL
+t_pipeline
+└── cmds ──► t_cmd #1           t_cmd #2           t_cmd #3
+             │                   │                   │
+             ├─ args:           ├─ args:           ├─ args:
+             │  ["cat",         │  ["grep",        │  ["head",
+             │   "file.txt"]    │   "error"]       │   "-5"]
+             │                   │                   │
+             ├─ redirs: NULL    ├─ redirs: NULL    ├─ redirs:
+             │                   │                   │  └─► REDIR_OUT
+             │                   │                   │      "result.txt"
+             │                   │                   │
+             └─ next ───────────┴─ next ───────────┴─ next: NULL
 ```
 
 ---
 
-## Key Concepts
+## Common Questions
 
-### Why Syntax Check Before Parse?
-The parser assumes valid input. Catching syntax errors early:
-1. Provides clear error messages
-2. Prevents undefined behavior in parser
-3. Follows bash behavior (error before execution)
+### Q: Why is exit code 2 for syntax errors?
 
-### Redirection Order Matters
-```
-cat file1 > out.txt file2
-```
-This is valid! It means: `cat file1 file2` with stdout to `out.txt`.
+**A**: It's a shell convention! Exit codes have meanings:
+- 0: Success
+- 1: General error
+- 2: Misuse of shell command (syntax error)
+- 126: Command cannot execute (permission)
+- 127: Command not found
 
-The parser collects redirections separately from args, preserving order for the executor.
+### Q: Can redirections appear before the command?
 
-### Exit Code 2 for Syntax Errors
-Shell convention: syntax errors return exit code 2.
+**A**: Yes! These are equivalent:
+```bash
+< input cat    # Input first
+cat < input    # Command first
 ```
-$ |
-minishell: syntax error near unexpected token `|'
-$ echo $?
-2
+
+Both mean: "read from input, run cat"
+
+### Q: What about spaces around redirections?
+
+**A**: Optional! These are all the same:
+```bash
+cat>file      # No spaces
+cat > file    # Spaces
+cat> file     # Mixed
 ```
+
+The lexer handles this by recognizing `>` as an operator that breaks words.
+
+### Q: Why separate syntax check and parsing?
+
+**A**:
+1. **Cleaner error messages**: Syntax check knows exactly what's wrong
+2. **Simpler parser**: Parser can assume valid input
+3. **Early exit**: Don't waste time parsing invalid commands

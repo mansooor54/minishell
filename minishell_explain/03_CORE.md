@@ -9,9 +9,47 @@
 
 ---
 
-## shell_loop.c
+## What is the Shell Loop?
 
-### shell_loop()
+**Real-life analogy**: The shell loop is like a **cashier at a restaurant**:
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    CASHIER LOOP                       │
+│                                                       │
+│   1. Say "What would you like?" (show prompt)        │
+│   2. Customer says "burger please" (read input)      │
+│   3. Check if valid order (syntax check)             │
+│   4. Send to kitchen (execute)                       │
+│   5. Give food to customer (show output)             │
+│   6. Go back to step 1 (loop)                        │
+│                                                       │
+│   Stop when: Customer says "bye" or leaves (exit)    │
+└──────────────────────────────────────────────────────┘
+```
+
+In shell terms:
+```
+┌──────────────────────────────────────────────────────┐
+│                    SHELL LOOP                         │
+│                                                       │
+│   1. Show "minishell> " (prompt)                     │
+│   2. User types "ls -la" (read input)                │
+│   3. Check for syntax errors (validate)              │
+│   4. Run the command (execute)                       │
+│   5. Show files list (output)                        │
+│   6. Go back to step 1 (loop)                        │
+│                                                       │
+│   Stop when: "exit" command or Ctrl+D                │
+└──────────────────────────────────────────────────────┘
+```
+
+---
+
+## shell_loop.c - The Main Loop
+
+### shell_loop() - Complete Example
+
 ```c
 void shell_loop(t_shell *shell)
 {
@@ -39,310 +77,463 @@ void shell_loop(t_shell *shell)
 }
 ```
 
-**Purpose**: The heart of the shell - the Read-Eval-Print Loop (REPL).
+### Let's Walk Through an Example
 
-**Step-by-step**:
+**User types**: `echo hello`
 
-1. **`while (!shell->should_exit)`**
-   - Keeps running until `exit` command sets this flag
-   - Or until EOF (Ctrl+D) breaks out
+```
+Iteration 1 of shell_loop():
 
-2. **`setup_signals()`**
-   - Reset signal handlers each iteration
-   - Important after child processes might have changed them
-
-3. **`check_signal(shell)`**
-   - If Ctrl+C was pressed (`g_signal == SIGINT`)
-   - Set exit_status to 130 (128 + 2)
-   - Reset g_signal to 0
-
-4. **Reading input**:
-   - Interactive mode: `read_logical_line()` with colored prompt
-   - Non-interactive: `readline("")` for scripts/pipes
-
-5. **`handle_eof()`**
-   - If line is NULL (Ctrl+D or EOF)
-   - Print "exit" if interactive
-   - Return 1 to break the loop
-
-6. **Processing valid input**:
-   - Skip if line is NULL, empty, or all whitespace
-   - Add to history if interactive
-   - `process_line()` does lexer → parser → expander → executor
-
-7. **`free(line)`**
-   - Always free the allocated line
+┌──────────────────────────────────────────────────────┐
+│ Step 1: setup_signals()                               │
+│         - Make sure Ctrl+C handler is ready          │
+│                                                       │
+│ Step 2: check_signal(shell)                          │
+│         - g_signal == 0 (no Ctrl+C pressed)          │
+│         - Do nothing, continue                        │
+│                                                       │
+│ Step 3: read_logical_line()                          │
+│         - Display: "minishell> "                     │
+│         - User types: echo hello                     │
+│         - Press Enter                                │
+│         - line = "echo hello"                        │
+│                                                       │
+│ Step 4: check_signal(shell)                          │
+│         - Still g_signal == 0, continue              │
+│                                                       │
+│ Step 5: handle_eof()                                 │
+│         - line is NOT NULL, return 0                 │
+│         - Don't break                                │
+│                                                       │
+│ Step 6: Check if valid input                         │
+│         - line exists ✓                              │
+│         - line is not empty ✓                        │
+│         - line is not just spaces ✓                  │
+│                                                       │
+│ Step 7: history_add_line()                           │
+│         - Add "echo hello" to history                │
+│         - Now ↑ arrow will show it                   │
+│                                                       │
+│ Step 8: process_line("echo hello", shell)            │
+│         - Lexer: [WORD:"echo"] [WORD:"hello"]        │
+│         - Parser: cmd{args:["echo","hello"]}         │
+│         - Expander: nothing to expand                │
+│         - Executor: runs builtin_echo()              │
+│         - Output: "hello" printed to screen          │
+│                                                       │
+│ Step 9: free(line)                                   │
+│         - Free "echo hello" string                   │
+│                                                       │
+│ Step 10: Loop back to Step 1...                      │
+└──────────────────────────────────────────────────────┘
+```
 
 ---
 
-### check_signal()
-```c
-static void check_signal(t_shell *shell)
-{
-    if (g_signal == SIGINT)
-    {
-        shell->exit_status = 130;
-        g_signal = 0;
-    }
-}
+## What Happens with Ctrl+C?
+
+**Example**: User is typing but presses Ctrl+C
+
+```
+minishell> echo hel^C     ← User presses Ctrl+C mid-typing
+
+minishell>                 ← Fresh prompt appears!
 ```
 
-**Purpose**: Handle deferred signal processing.
+**Behind the scenes**:
 
-**Why deferred**: Signal handlers should be minimal - they just set `g_signal`. The main loop checks this flag and handles it properly.
+```
+┌──────────────────────────────────────────────────────┐
+│ 1. User starts typing "echo hel"                     │
+│                                                       │
+│ 2. User presses Ctrl+C                               │
+│    - Kernel sends SIGINT signal                      │
+│    - handle_sigint() runs immediately:               │
+│      • g_signal = 2 (SIGINT)                         │
+│      • write("\n") - new line                        │
+│      • rl_on_new_line() - tell readline              │
+│      • rl_replace_line("") - clear input             │
+│      • rl_redisplay() - show fresh prompt            │
+│                                                       │
+│ 3. readline() returns (maybe with partial "echo hel")│
+│                                                       │
+│ 4. Back in shell_loop():                             │
+│    check_signal(shell):                              │
+│      - Sees g_signal == 2                            │
+│      - Sets shell->exit_status = 130                 │
+│      - Resets g_signal = 0                           │
+│                                                       │
+│ 5. Loop continues with fresh prompt                  │
+└──────────────────────────────────────────────────────┘
+```
 
-**Exit code 130**: Standard convention for "terminated by SIGINT" (128 + signal number 2).
+**Why exit status 130?**
+```
+130 = 128 + 2 (SIGINT number)
+
+This is Unix convention:
+- Exit codes 0-127: normal exit codes
+- Exit codes 128+N: killed by signal N
+```
 
 ---
 
-### handle_eof()
-```c
-static int handle_eof(t_shell *shell, char *line)
-{
-    if (!line)
-    {
-        if (shell->interactive)
-            ft_putendl_fd("exit", 1);
-        return (1);
-    }
-    return (0);
-}
+## What Happens with Ctrl+D (EOF)?
+
+**Example**: User presses Ctrl+D at empty prompt
+
+```
+minishell> ^D              ← User presses Ctrl+D
+exit                       ← Shell prints "exit"
+$                          ← Back to parent shell
 ```
 
-**Purpose**: Handle end-of-file (Ctrl+D).
+**Behind the scenes**:
 
-**Why print "exit"**: When user presses Ctrl+D at empty prompt, bash prints "exit" before closing. We mimic this behavior for interactive sessions.
+```
+┌──────────────────────────────────────────────────────┐
+│ 1. readline() is waiting for input                   │
+│                                                       │
+│ 2. User presses Ctrl+D on empty line                 │
+│    - This sends EOF (End Of File) signal             │
+│    - readline() returns NULL                         │
+│                                                       │
+│ 3. handle_eof(shell, NULL):                          │
+│    - line is NULL → true                             │
+│    - if (interactive) print "exit"                   │
+│    - return 1                                         │
+│                                                       │
+│ 4. shell_loop sees return 1 → break                  │
+│                                                       │
+│ 5. main() continues to cleanup and exit              │
+└──────────────────────────────────────────────────────┘
+```
 
 ---
 
-## read_logical_line.c
+## read_logical_line.c - Reading with Prompt
 
-### read_logical_line()
+### The Prompt Anatomy
+
 ```c
-char *read_logical_line(void)
-{
-    char *line;
-
-    line = read_one_line("\001\033[1;33m\002minishell> \001\033[0m\002");
-    if (!line)
-        return (NULL);
-    while (needs_continuation(line))
-    {
-        line = process_continuation(line);
-        if (!line)
-            return (NULL);
-    }
-    return (line);
-}
+line = read_one_line("\001\033[1;33m\002minishell> \001\033[0m\002");
 ```
 
-**Purpose**: Read a complete logical line, handling multi-line input for unclosed quotes.
+**Breaking down the prompt string**:
+```
+\001           = Tell readline: "next chars are non-printing"
+\033[1;33m     = ANSI: set color to bold yellow
+\002           = Tell readline: "end of non-printing chars"
+minishell>     = The actual text user sees
+                 (space after >)
+\001           = Start non-printing again
+\033[0m        = ANSI: reset color to default
+\002           = End non-printing
+```
 
-**Prompt anatomy**:
-- `\001` and `\002` are readline markers for non-printing characters
-- `\033[1;33m` = yellow color
-- `minishell> ` = the visible prompt
-- `\033[0m` = reset color
+**Why \001 and \002?**
+```
+Without them:                    With them:
+┌────────────────────┐           ┌────────────────────┐
+│ minishell> hello█  │           │ minishell> hello█  │
+│     ^              │           │               ^    │
+│ cursor here wrong! │           │ cursor here right! │
+└────────────────────┘           └────────────────────┘
 
-**Why markers**: Without `\001`/`\002`, readline miscalculates cursor position when using colors, causing display glitches.
+readline counts all characters for cursor position.
+Color codes are invisible but counted without markers.
+```
 
 ---
 
-### read_one_line()
-```c
-static char *read_one_line(const char *prompt)
-{
-    char *line;
+### Multi-line Input (Unclosed Quotes)
 
-    g_signal = 0;
-    line = readline(prompt);
-    if (g_signal == SIGINT)
-    {
-        if (line)
-            free(line);
-        return (NULL);
-    }
-    return (line);
-}
-```
+**Example**: User types string with unclosed quote
 
-**Purpose**: Wrapper around readline that handles SIGINT.
-
-**Why check g_signal**: If user presses Ctrl+C during input:
-- Signal handler sets g_signal
-- readline returns (possibly with partial input)
-- We discard any partial input and return NULL
-
----
-
-### process_continuation()
-```c
-static char *process_continuation(char *line)
-{
-    char *more;
-
-    more = read_one_line("> ");
-    if (g_signal == SIGINT)
-    {
-        free(line);
-        if (more)
-            free(more);
-        return (NULL);
-    }
-    if (!more)
-        return (handle_continuation_error(line));
-    line = join_continuation(line, more);
-    free(more);
-    return (line);
-}
-```
-
-**Purpose**: Handle unclosed quotes by reading more input.
-
-**Scenario**:
 ```
 minishell> echo "hello
-> world"
+> world
+> done"
+hello
+world
+done
+minishell>
 ```
-When user types `echo "hello` and presses Enter, the quote isn't closed. Shell prompts with `> ` for continuation.
+
+**How it works**:
+
+```
+┌──────────────────────────────────────────────────────┐
+│ Step 1: read_one_line("minishell> ")                 │
+│         User types: echo "hello                      │
+│         line = "echo \"hello"                        │
+│                                                       │
+│ Step 2: needs_continuation(line)?                    │
+│         - Check if quotes are balanced               │
+│         - Found " but no closing "                   │
+│         - Return TRUE                                │
+│                                                       │
+│ Step 3: process_continuation(line)                   │
+│         - read_one_line("> ")                        │
+│         - User types: world                          │
+│         - more = "world"                             │
+│         - join_continuation(line, more)              │
+│         - line = "echo \"hello\nworld"               │
+│                                                       │
+│ Step 4: needs_continuation(line)?                    │
+│         - Still no closing "                         │
+│         - Return TRUE                                │
+│                                                       │
+│ Step 5: process_continuation(line)                   │
+│         - read_one_line("> ")                        │
+│         - User types: done"                          │
+│         - more = "done\""                            │
+│         - join_continuation(line, more)              │
+│         - line = "echo \"hello\nworld\ndone\""       │
+│                                                       │
+│ Step 6: needs_continuation(line)?                    │
+│         - Quotes are now balanced!                   │
+│         - Return FALSE                               │
+│                                                       │
+│ Step 7: Return complete line                         │
+└──────────────────────────────────────────────────────┘
+```
 
 ---
 
-## join_continuation.c
+## Interactive vs Non-Interactive Mode
 
-### join_continuation()
+### What's the difference?
+
+| Aspect | Interactive | Non-Interactive |
+|--------|-------------|-----------------|
+| Input from | Keyboard (terminal) | Pipe or file |
+| Prompt | Shows "minishell> " | No prompt |
+| History | Saved | Not saved |
+| Detection | `isatty(STDIN) == 1` | `isatty(STDIN) == 0` |
+
+### Examples
+
+**Interactive (terminal)**:
+```bash
+$ ./minishell
+minishell> ls        ← You type this
+file1.txt file2.txt  ← Output
+minishell>           ← Prompt again
+```
+
+**Non-Interactive (pipe)**:
+```bash
+$ echo "ls" | ./minishell
+file1.txt file2.txt  ← Output, no prompts!
+```
+
+**Non-Interactive (here-string)**:
+```bash
+$ ./minishell <<< "ls"
+file1.txt file2.txt
+```
+
+### Detection Code
+
 ```c
-char *join_continuation(char *line, char *next)
+void init_shell(t_shell *shell, char **envp)
 {
-    char *r;
-
-    if (!line && !next)
-        return (NULL);
-    if (!line)
-        return (ft_strdup(next));
-    if (!next)
-        return (line);
-    while (*next == ' ' || *next == '\t' || *next == '\n')
-        next++;
-    r = str_join(line, next);
-    free(line);
-    return (r);
+    // ...
+    shell->interactive = isatty(STDIN_FILENO);
+    // isatty returns 1 if stdin is a terminal
+    // isatty returns 0 if stdin is a pipe or file
 }
 ```
 
-**Purpose**: Join a continuation line to the original line.
-
-**Why skip whitespace**: Leading whitespace in continuation is typically not meaningful.
-
-**Memory management**: Frees the old `line` and returns new combined string.
-
 ---
 
-### str_join() (helper)
-```c
-static char *str_join(const char *a, const char *b)
-{
-    size_t la, lb;
-    char *r;
-
-    la = get_safe_len(a);
-    lb = get_safe_len(b);
-    r = malloc(la + lb + 1);
-    if (!r)
-        return (NULL);
-    if (a)
-        copy_str(r, a, la);
-    if (b)
-        copy_str(r + la, b, lb);
-    r[la + lb] = '\0';
-    return (r);
-}
-```
-
-**Purpose**: Safe string concatenation with NULL handling.
-
----
-
-## Shell Loop Flow Diagram
+## process_line() - The Processing Pipeline
 
 ```
-                    ┌─────────────────┐
-                    │  shell_loop()   │
-                    └────────┬────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-          ┌────────►│ should_exit?    │
-          │         └────────┬────────┘
-          │                  │ no
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │ setup_signals() │
-          │         └────────┬────────┘
-          │                  │
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │ check_signal()  │
-          │         └────────┬────────┘
-          │                  │
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │ readline()      │
-          │         │ (with prompt)   │
-          │         └────────┬────────┘
-          │                  │
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │ line == NULL?   │──yes──► Print "exit", break
-          │         └────────┬────────┘
-          │                  │ no
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │ empty or space? │──yes──► free(line), loop
-          │         └────────┬────────┘
-          │                  │ no
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │ history_add()   │
-          │         └────────┬────────┘
-          │                  │
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │ process_line()  │ ──► lexer → parser → executor
-          │         └────────┬────────┘
-          │                  │
-          │                  ▼
-          │         ┌─────────────────┐
-          │         │   free(line)    │
-          │         └────────┬────────┘
-          │                  │
-          └──────────────────┘
+                    "ls -la | grep .c"
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   LEXER     │
+                    │             │
+                    │ Split into  │
+                    │ tokens      │
+                    └──────┬──────┘
+                           │
+             [WORD] [WORD] [PIPE] [WORD] [WORD]
+               ls    -la    |      grep   .c
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  VALIDATE   │
+                    │   SYNTAX    │
+                    │             │
+                    │ Check for   │
+                    │ errors      │
+                    └──────┬──────┘
+                           │
+                    OK? ───┼─── Error?
+                           │         │
+                           │         ▼
+                           │    Print error
+                           │    exit_status = 2
+                           │    return
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   PARSER    │
+                    │             │
+                    │ Build       │
+                    │ command     │
+                    │ structures  │
+                    └──────┬──────┘
+                           │
+                    t_pipeline
+                    ├── cmd1: args=["ls","-la"]
+                    └── cmd2: args=["grep",".c"]
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  EXPANDER   │
+                    │             │
+                    │ Replace $   │
+                    │ Remove ""   │
+                    └──────┬──────┘
+                           │
+                    (no changes here, no $ or quotes)
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  EXECUTOR   │
+                    │             │
+                    │ Fork, pipe  │
+                    │ execve      │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    Output: .c files listed
 ```
 
 ---
 
-## Key Concepts
+## Shell Loop Flow Diagram - Complete
 
-### Interactive vs Non-Interactive Mode
-```c
-if (shell->interactive)
-    line = read_logical_line();  // With prompt
-else
-    line = readline("");          // No prompt
+```
+                         ┌─────────────────────┐
+                         │    shell_loop()     │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+            ┌───────────►│  should_exit?       │───yes───► return
+            │            └──────────┬──────────┘
+            │                       │ no
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │   setup_signals()   │
+            │            │                     │
+            │            │ Reset Ctrl+C/Ctrl+\ │
+            │            │ handlers            │
+            │            └──────────┬──────────┘
+            │                       │
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │   check_signal()    │
+            │            │                     │
+            │            │ if g_signal == 2:   │
+            │            │   exit_status = 130 │
+            │            │   g_signal = 0      │
+            │            └──────────┬──────────┘
+            │                       │
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │  read_logical_line()│
+            │            │  or readline("")    │
+            │            │                     │
+            │            │ Show prompt, wait   │
+            │            │ for user input      │
+            │            └──────────┬──────────┘
+            │                       │
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │  line == NULL?      │───yes───► print "exit"
+            │            │  (Ctrl+D / EOF)     │           break loop
+            │            └──────────┬──────────┘
+            │                       │ no
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │  Empty or spaces?   │───yes───► free(line)
+            │            └──────────┬──────────┘           loop back
+            │                       │ no
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │  history_add_line() │
+            │            │  (if interactive)   │
+            │            └──────────┬──────────┘
+            │                       │
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │   process_line()    │
+            │            │                     │
+            │            │ lexer → validate →  │
+            │            │ parser → expander → │
+            │            │ executor            │
+            │            └──────────┬──────────┘
+            │                       │
+            │                       ▼
+            │            ┌─────────────────────┐
+            │            │     free(line)      │
+            │            └──────────┬──────────┘
+            │                       │
+            └───────────────────────┘
 ```
 
-- **Interactive**: Shell is connected to a terminal (TTY)
-- **Non-interactive**: Input from pipe or file (`echo "ls" | ./minishell`)
+---
 
-Detected using `isatty(STDIN_FILENO)` in `init_shell()`.
+## Common Questions
 
-### Why process_line() is separate
-The `process_line()` function (in shell_utils.c) encapsulates:
-1. Lexer call
-2. Syntax validation
-3. Parser call
-4. Expander call
-5. Executor call
-6. Memory cleanup
+### Q: Why call setup_signals() every iteration?
 
-This separation keeps `shell_loop()` clean and focused on the REPL logic.
+**A**: Child processes might change signal handlers. After forking and waiting, we restore our handlers to be safe.
+
+### Q: Why check_signal() twice (before and after readline)?
+
+**A**:
+- **Before**: Handle any Ctrl+C from previous command
+- **After**: Handle Ctrl+C pressed during input
+
+### Q: What if user types only spaces?
+
+**A**:
+```
+minishell>          ← User types only spaces, presses Enter
+minishell>          ← No error, no action, just new prompt
+```
+
+The `is_all_space()` check skips processing empty/whitespace-only lines.
+
+### Q: Why add to history BEFORE processing?
+
+**A**: Even if command fails, we want to remember it:
+```
+minishell> lss       ← Typo!
+minishell: lss: command not found
+minishell>           ← Press ↑
+minishell> lss       ← Can fix the typo!
+```
+
+---
+
+## Key Concepts Summary
+
+| Function | Purpose | When it runs |
+|----------|---------|--------------|
+| `shell_loop()` | Main REPL loop | Continuously |
+| `setup_signals()` | Reset signal handlers | Each iteration |
+| `check_signal()` | Handle deferred Ctrl+C | Before/after input |
+| `read_logical_line()` | Read with prompt & multi-line | Interactive mode |
+| `readline("")` | Read without prompt | Non-interactive |
+| `handle_eof()` | Handle Ctrl+D | When line is NULL |
+| `process_line()` | Full command processing | Valid input only |
+| `history_add_line()` | Remember command | Interactive mode |
