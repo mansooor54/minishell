@@ -108,21 +108,21 @@ Also removes quotes:
 1. Create a pipe (connection between commands)
 
 2. Fork child #1 for "echo":
-   ┌────────────────────────────┐
-   │ Child Process #1           │
-   │ - stdout → pipe write end  │
-   │ - runs: echo "Hello mansoor"│
+   ┌──────────────────────────────────┐
+   │ Child Process #1                 │
+   │ - stdout → pipe write end        │
+   │ - runs: echo "Hello mansoor"     │
    │ - writes "Hello mansoor" to pipe │
-   └────────────────────────────┘
+   └──────────────────────────────────┘
 
 3. Fork child #2 for "cat":
-   ┌────────────────────────────┐
-   │ Child Process #2           │
-   │ - stdin ← pipe read end    │
-   │ - stdout → file.txt        │
-   │ - runs: cat                │
+   ┌───────────────────────────────────┐
+   │ Child Process #2                  │
+   │ - stdin ← pipe read end           │
+   │ - stdout → file.txt               │
+   │ - runs: cat                       │
    │ - reads from pipe, writes to file │
-   └────────────────────────────┘
+   └───────────────────────────────────┘
 
 4. Wait for both children to finish
 
@@ -151,50 +151,50 @@ Also removes quotes:
 └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                           2. LEXER                                   │
 │                                                                      │
-│   Input:  "ls -la | grep .c"                                        │
+│   Input:  "ls -la | grep .c"                                     k   │
 │                                                                      │
 │   Output: [WORD:ls] → [WORD:-la] → [PIPE:|] → [WORD:grep] → [WORD:.c]│
 │                                                                      │
 │   Think of it as: Breaking sentence into words                       │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                          3. PARSER                                   │
 │                                                                      │
 │   Input:  Token list                                                 │
 │                                                                      │
 │   Output: Command structure                                          │
-│           cmd1 (ls -la) ──pipe──► cmd2 (grep .c)                    │
+│           cmd1 (ls -la) ──pipe──► cmd2 (grep .c)                     │
 │                                                                      │
-│   Think of it as: Understanding grammar of the sentence             │
-└─────────────────────────────────────────────────────────────────────┘
+│   Think of it as: Understanding grammar of the sentence              │
+└──────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                         4. EXPANDER                                  │
 │                                                                      │
-│   Input:  "echo $HOME"                                              │
-│   Output: "echo /Users/mansoor"                                     │
+│   Input:  "echo $HOME"                                               │
+│   Output: "echo /Users/mansoor"                                      │
 │                                                                      │
-│   - Replaces $VAR with values                                       │
+│   - Replaces $VAR with values                                        │
 │   - Removes quotes                                                   │
-│   - Handles $? (exit status)                                        │
-└─────────────────────────────────────────────────────────────────────┘
+│   - Handles $? (exit status)                                         │
+└──────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                         5. EXECUTOR                                  │
 │                                                                      │
 │   For each command:                                                  │
-│   1. Is it builtin (echo/cd/pwd)? → Run directly                    │
-│   2. Is it external (ls/grep)?    → Fork + Execve                   │
-│   3. Has pipes?                   → Connect with pipe()             │
-│   4. Has redirections?            → Redirect stdin/stdout           │
-└─────────────────────────────────────────────────────────────────────┘
+│   1. Is it builtin (echo/cd/pwd)? → Run directly                     │
+│   2. Is it external (ls/grep)?    → Fork + Execve                    │
+│   3. Has pipes?                   → Connect with pipe()              │
+│   4. Has redirections?            → Redirect stdin/stdout            │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -215,26 +215,26 @@ minishell/
 │
 └── src/
     │
-    ├── main/             # WHERE PROGRAM STARTS
-    │   ├── main.c        # main() function
+    ├── main/                 # WHERE PROGRAM STARTS
+    │   ├── main.c            # main() function
     │   └── minishell_logo.c  # Pretty logo printing
     │
-    ├── core/             # THE MAIN LOOP
+    ├── core/                 # THE MAIN LOOP
     │   ├── shell_loop.c      # while(1) { read; execute; }
     │   ├── read_logical_line.c  # Handle multi-line input
     │   └── ...
     │
-    ├── lexer/            # BREAKING INTO TOKENS
+    ├── lexer/                # BREAKING INTO TOKENS
     │   ├── lexer.c           # Main lexer
     │   ├── lexer_operator.c  # Handle |, <, >, <<, >>
     │   └── lexer_utils.c     # Helper functions
     │
-    ├── parser/           # BUILDING COMMAND STRUCTURE
+    ├── parser/               # BUILDING COMMAND STRUCTURE
     │   ├── parser.c          # Main parser
     │   ├── parser_pipeline.c # Handle pipes
     │   └── parser_syntax_check.c  # Check for errors
     │
-    ├── expander/         # VARIABLE EXPANSION
+    ├── expander/             # VARIABLE EXPANSION
     │   ├── expander_core.c   # Main expansion
     │   ├── expander_vars.c   # $VAR handling
     │   └── expander_quotes.c # Quote removal

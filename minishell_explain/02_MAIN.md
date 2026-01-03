@@ -157,11 +157,11 @@ envp[N] = NULL  ← End marker
 **What init_shell does**:
 ```
 envp (array)                    shell.env (linked list)
-┌─────────────────────┐         ┌─────────────────────┐
-│ "HOME=/Users/m..."  │   →     │ key: "HOME"         │
-├─────────────────────┤         │ value: "/Users/m..." │
+┌─────────────────────┐         ┌───────────────────────┐
+│ "HOME=/Users/m..."  │   →     │ key: "HOME"           │
+├─────────────────────┤         │ value: "/Users/m..."  │
 │ "PATH=/usr/bin:..." │         │ next ─────────────────┼──→ ...
-├─────────────────────┤         └─────────────────────┘
+├─────────────────────┤         └───────────────────────┘
 │ "USER=mansoor"      │
 ├─────────────────────┤
 │ NULL                │
@@ -182,10 +182,10 @@ setup_signals();
 
 **What this configures**:
 
-| Signal | Key | What happens |
-|--------|-----|--------------|
-| SIGINT | Ctrl+C | Shows new prompt (doesn't quit shell) |
-| SIGQUIT | Ctrl+\ | Ignored (does nothing) |
+| Signal  | Key    | What happens                          |
+|---------|--------|---------------------------------------|
+| SIGINT  | Ctrl+C | Shows new prompt (doesn't quit shell) |
+| SIGQUIT | Ctrl+\ | Ignored (does nothing)                |
 
 **Example behavior**:
 ```
@@ -227,17 +227,17 @@ shell_loop(&shell);
 
 ```
 ┌──────────────────────────────────────────────┐
-│                SHELL LOOP                     │
+│                SHELL LOOP                    │
 │                                              │
 │   ┌──────────────────────────────────────┐   │
 │   │  1. Show prompt: minishell>          │   │
-│   │  2. User types: ls -la              │   │
-│   │  3. Lexer: "ls" "-la" (tokens)      │   │
-│   │  4. Parser: cmd{args: [ls, -la]}    │   │
-│   │  5. Expander: (no $ to expand)      │   │
-│   │  6. Executor: fork + execve         │   │
+│   │  2. User types: ls -la               │   │
+│   │  3. Lexer: "ls" "-la" (tokens)       │   │
+│   │  4. Parser: cmd{args: [ls, -la]}     │   │
+│   │  5. Expander: (no $ to expand)       │   │
+│   │  6. Executor: fork + execve          │   │
 │   │  7. Display output                   │   │
-│   │  8. Go back to step 1               │   │
+│   │  8. Go back to step 1                │   │
 │   └──────────────────────────────────────┘   │
 │                                              │
 │   Loop ends when: exit command or Ctrl+D     │
@@ -281,24 +281,24 @@ Valgrind will complain if we don't free everything!
     │   main()    │
     └──────┬──────┘
            │
-    ┌──────▼──────┐
+    ┌──────▼───────┐
     │ Clear Screen │  ← write("\033[2J\033[H")
-    └──────┬──────┘
+    └──────┬───────┘
            │
-    ┌──────▼──────┐
+    ┌──────▼───────┐
     │ print_logo() │  ← ASCII art banner
-    └──────┬──────┘
+    └──────┬───────┘
            │
-    ┌──────▼──────┐
+    ┌──────▼───────┐
     │ init_shell() │  ← Convert envp to linked list
     │              │     Set shell.interactive
     │              │     Set exit_status = 0
-    └──────┬──────┘
+    └──────┬───────┘
            │
-    ┌──────▼────────┐
-    │ setup_signals()│ ← SIGINT → handle_sigint
-    │               │    SIGQUIT → handle_sigquit
-    └──────┬────────┘
+    ┌──────▼─────────┐
+    │ setup_signals()│ ← SIGINT b→ handle_sigint
+    │                │   SIGQUIT → handle_sigquit
+    └──────┬─────────┘
            │
     ┌──────▼────────┐
     │ history_init()│  ← Load ~/.minishell_history
